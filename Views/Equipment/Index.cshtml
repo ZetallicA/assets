@@ -1,0 +1,448 @@
+@model AssetManagement.Controllers.PaginatedList<AssetManagement.Models.Equipment>
+@{
+    ViewData["Title"] = "Equipment";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Equipment</h1>
+            <p class="text-muted mb-0">Manage IT equipment inventory</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Equipment
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" name="SearchString" value="@ViewData["CurrentFilter"]" placeholder="Search by OATH Tag, Serial Number, Net Name, User, Model, Manufacturer, Department, or Facility..." autocomplete="off">
+                        <div id="searchSuggestions" class="position-absolute bg-white border rounded shadow-sm" style="top: 100%; left: 0; right: 0; z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()))
+                        {
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex gap-2">
+                        <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-sort-alpha-down"></i> OATH Tag
+                        </a>
+                        <a asp-action="Index" asp-route-sortOrder="@ViewData["StatusSortParm"]" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-sort-alpha-down"></i> Status
+                        </a>
+                        <a asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-sort-alpha-down"></i> Location
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Equipment List -->
+    <div class="card">
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-laptop display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No Equipment Found</h4>
+                    <p class="text-muted">@(string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()) ? "Add your first piece of equipment to get started." : "No equipment matches your search criteria.")</p>
+                    @if (string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()))
+                    {
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Equipment
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                                        OATH Tag
+                                        @if (ViewData["CurrentSort"]?.ToString() == "oath_tag_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-sort-alpha-up"></i>
+                                        }
+                                    </a>
+                                </th>
+                                <th>Net Name</th>
+                                <th>Model</th>
+                                <th>Status</th>
+                                <th>Location</th>
+                                <th>Assigned To</th>
+                                <th>Category</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.OATH_Tag</strong>
+                                        @if (!string.IsNullOrEmpty(item.Serial_Number))
+                                        {
+                                            <br><small class="text-muted">@item.Serial_Number</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Computer_Name))
+                                        {
+                                            <span class="badge bg-secondary">@item.Computer_Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Model))
+                                        {
+                                            <span>@item.Model</span>
+                                            @if (!string.IsNullOrEmpty(item.Manufacturer))
+                                            {
+                                                <br><small class="text-muted">@item.Manufacturer</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.CurrentStatus != null)
+                                        {
+                                            <span class="badge" style="background-color: @item.CurrentStatus.Color; color: white;">
+                                                @item.CurrentStatus.Name
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Unknown</span>
+                                        }
+                                        @if (item.IsCheckedOut)
+                                        {
+                                            <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Checked Out</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.CurrentLocation != null)
+                                        {
+                                            <span>@item.CurrentLocation.Name</span>
+                                            @if (item.CurrentFloorPlan != null)
+                                            {
+                                                <br><small class="text-muted">@item.CurrentFloorPlan.FloorNumber</small>
+                                            }
+                                            @if (item.CurrentDesk != null)
+                                            {
+                                                <br><small class="text-muted">Desk @item.CurrentDesk.DeskNumber</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Assigned_User_Name))
+                                        {
+                                            <span>@item.Assigned_User_Name</span>
+                                            @if (!string.IsNullOrEmpty(item.Assigned_User_Email))
+                                            {
+                                                <br><small class="text-muted">@item.Assigned_User_Email</small>
+                                            }
+                                        }
+                                        else if (item.AssignedPerson != null)
+                                        {
+                                            <span>@item.AssignedPerson.FullName</span>
+                                        }
+                                        else if (item.AssignedEntraUser != null)
+                                        {
+                                            <span>@item.AssignedEntraUser.DisplayName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.AssetCategory != null)
+                                        {
+                                            <span class="badge bg-info">@item.AssetCategory.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            @if (item.IsCheckedOut)
+                                            {
+                                                <a asp-action="CheckIn" asp-route-id="@item.Id" class="btn btn-outline-success" title="Check In">
+                                                    <i class="bi bi-box-arrow-in-down"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a asp-action="CheckOut" asp-route-id="@item.Id" class="btn btn-outline-warning" title="Check Out">
+                                                    <i class="bi bi-box-arrow-up"></i>
+                                                </a>
+                                            }
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination and Page Size Controls -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3">Showing @((Model.PageIndex - 1) * (ViewData["CurrentPageSize"] as int? ?? 20) + 1) to @Math.Min(Model.PageIndex * (ViewData["CurrentPageSize"] as int? ?? 20), Model.TotalCount) of @Model.TotalCount records</span>
+                        <div class="d-flex align-items-center">
+                            <label class="me-2">Records per page:</label>
+                            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: auto;">
+                                @foreach (var size in ViewData["PageSizeOptions"] as List<int> ?? new List<int>())
+                                {
+                                    if (size == (ViewData["CurrentPageSize"] as int? ?? 20))
+                                    {
+                                        <option value="@size" selected>@size</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@size">@size</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    
+                    @if (Model.TotalPages > 1)
+                    {
+                        <nav aria-label="Equipment pagination">
+                            <ul class="pagination mb-0">
+                                <!-- First Page -->
+                                @if (Model.PageIndex > 3)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="1">
+                                            <i class="bi bi-chevron-double-left"></i>
+                                        </a>
+                                    </li>
+                                }
+                                
+                                <!-- Previous 10 Pages -->
+                                @if (Model.PageIndex > 10)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Math.Max(1, Model.PageIndex - 10))">
+                                            -10
+                                        </a>
+                                    </li>
+                                }
+                                
+                                <!-- Previous Page -->
+                                <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Model.PageIndex - 1)">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                                
+                                <!-- Page Numbers -->
+                                @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@i">@i</a>
+                                    </li>
+                                }
+                                
+                                <!-- Next Page -->
+                                <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Model.PageIndex + 1)">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                
+                                <!-- Next 10 Pages -->
+                                @if (Model.PageIndex < Model.TotalPages - 9)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Math.Min(Model.TotalPages, Model.PageIndex + 10))">
+                                            +10
+                                        </a>
+                                    </li>
+                                }
+                                
+                                <!-- Last Page -->
+                                @if (Model.PageIndex < Model.TotalPages - 2)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@Model.TotalPages">
+                                            <i class="bi bi-chevron-double-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Page size selector functionality
+        document.getElementById('pageSizeSelect').addEventListener('change', function() {
+            const pageSize = this.value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('pageSize', pageSize);
+            currentUrl.searchParams.set('pageNumber', '1'); // Reset to first page
+            window.location.href = currentUrl.toString();
+        });
+
+        // Autocomplete search functionality
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchSuggestions.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetchSearchSuggestions(query);
+            }, 300);
+        });
+
+        searchInput.addEventListener('blur', function() {
+            // Delay hiding to allow clicking on suggestions
+            setTimeout(() => {
+                searchSuggestions.style.display = 'none';
+            }, 200);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            const query = this.value.trim();
+            if (query.length >= 2) {
+                fetchSearchSuggestions(query);
+            }
+        });
+
+        function fetchSearchSuggestions(query) {
+            fetch(`@Url.Action("GetSearchSuggestions")?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displaySearchSuggestions(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching search suggestions:', error);
+                    searchSuggestions.style.display = 'none';
+                });
+        }
+
+        function displaySearchSuggestions(suggestions) {
+            if (!suggestions || suggestions.length === 0) {
+                searchSuggestions.style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            suggestions.forEach(suggestion => {
+                html += `
+                    <div class="p-2 border-bottom suggestion-item" style="cursor: pointer;" 
+                         onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                         onmouseout="this.style.backgroundColor='white'"
+                         onclick="selectSuggestion('${suggestion.value}', '${suggestion.type}')">
+                        <div class="d-flex justify-content-between">
+                            <span><strong>${suggestion.value}</strong></span>
+                            <small class="text-muted">${suggestion.type}</small>
+                        </div>
+                        ${suggestion.description ? `<small class="text-muted">${suggestion.description}</small>` : ''}
+                    </div>
+                `;
+            });
+
+            searchSuggestions.innerHTML = html;
+            searchSuggestions.style.display = 'block';
+        }
+
+        function selectSuggestion(value, type) {
+            searchInput.value = value;
+            searchSuggestions.style.display = 'none';
+            searchInput.form.submit();
+        }
+
+        // Keyboard navigation for suggestions
+        searchInput.addEventListener('keydown', function(e) {
+            const suggestions = searchSuggestions.querySelectorAll('.suggestion-item');
+            let currentIndex = -1;
+            
+            // Find currently highlighted suggestion
+            suggestions.forEach((item, index) => {
+                if (item.style.backgroundColor === 'rgb(248, 249, 250)') {
+                    currentIndex = index;
+                }
+            });
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentIndex < suggestions.length - 1) {
+                    if (currentIndex >= 0) suggestions[currentIndex].style.backgroundColor = 'white';
+                    currentIndex++;
+                    suggestions[currentIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    suggestions[currentIndex].style.backgroundColor = 'white';
+                    currentIndex--;
+                    suggestions[currentIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                e.preventDefault();
+                suggestions[currentIndex].click();
+            } else if (e.key === 'Escape') {
+                searchSuggestions.style.display = 'none';
+            }
+        });
+    </script>
+}

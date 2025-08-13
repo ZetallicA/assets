@@ -1,0 +1,154 @@
+@model IEnumerable<FloorPlan>
+@{
+    ViewData["Title"] = "Floor Plans";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-layers me-2"></i>
+                            Floor Plans
+                        </h3>
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Add New Floor Plan
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            @TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No floor plans found. <a asp-action="Create">Create your first floor plan</a>.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Location</th>
+                                        <th>Floor</th>
+                                        <th>Name</th>
+                                        <th>Desks</th>
+                                        <th>Equipment</th>
+                                        <th>Image</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var floorPlan in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@floorPlan.Location?.Name</strong>
+                                                @if (!string.IsNullOrEmpty(floorPlan.Location?.Address))
+                                                {
+                                                    <br><small class="text-muted">@floorPlan.Location.Address</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">@floorPlan.FloorNumber</span>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(floorPlan.FloorName))
+                                                {
+                                                    <span>@floorPlan.FloorName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No name</span>
+                                                }
+                                                @if (!string.IsNullOrEmpty(floorPlan.Description))
+                                                {
+                                                    <br><small class="text-muted">@floorPlan.Description</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    @floorPlan.Desks.Count(d => d.IsActive) desks
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    @floorPlan.Equipment.Count(e => e.IsActive) items
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(floorPlan.ImagePath))
+                                                {
+                                                    <span class="badge bg-success">Has Image</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No Image</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @floorPlan.CreatedAt.ToString("MMM dd, yyyy")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("FloorPlan", "InteractiveMap", new { id = floorPlan.Id })" 
+                                                       class="btn btn-sm btn-outline-primary" title="Interactive Map">
+                                                        <i class="fas fa-map"></i>
+                                                    </a>
+                                                    <a asp-action="Details" asp-route-id="@floorPlan.Id" 
+                                                       class="btn btn-sm btn-outline-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Edit" asp-route-id="@floorPlan.Id" 
+                                                       class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                            onclick="deleteFloorPlan(@floorPlan.Id, '@floorPlan.Location?.Name - @floorPlan.FloorNumber')" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deleteFloorPlan(id, name) {
+            if (confirm(`Are you sure you want to delete the floor plan "${name}"? This will also deactivate all associated desks.`)) {
+                $.post('@Url.Action("Delete")', { id: id })
+                    .done(function() {
+                        location.reload();
+                    })
+                    .fail(function() {
+                        alert('Failed to delete floor plan');
+                    });
+            }
+        }
+    </script>
+}

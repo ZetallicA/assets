@@ -1,0 +1,253 @@
+@model FloorPlan
+@{
+    ViewData["Title"] = $"Floor Plan Details - {Model.FloorNumber}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-map me-2"></i>
+                                @Model.Location.Name - @Model.FloorNumber
+                                @if (!string.IsNullOrEmpty(Model.FloorName))
+                                {
+                                    <span class="text-muted">(@Model.FloorName)</span>
+                                }
+                            </h3>
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <small class="text-muted">@Model.Description</small>
+                            }
+                        </div>
+                        <div>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>
+                                Edit
+                            </a>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to List
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            @if (!string.IsNullOrEmpty(Model.ImagePath))
+                            {
+                                <div class="mb-4">
+                                    <h5>Floor Plan Image</h5>
+                                    <img src="@Model.ImagePath" alt="Floor Plan" class="img-fluid border rounded" style="max-height: 400px;" />
+                                </div>
+                            }
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chair me-2"></i>
+                                        Desks (@Model.Desks.Count(d => d.IsActive))
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.Desks.Any(d => d.IsActive))
+                                    {
+                                        <div class="row">
+                                            @foreach (var desk in Model.Desks.Where(d => d.IsActive))
+                                            {
+                                                <div class="col-md-6 col-lg-4 mb-3">
+                                                    <div class="card border-primary">
+                                                        <div class="card-header bg-primary text-white">
+                                                            <h6 class="mb-0">
+                                                                <i class="fas fa-chair me-2"></i>
+                                                                @desk.DeskNumber
+                                                                @if (!string.IsNullOrEmpty(desk.DeskName))
+                                                                {
+                                                                    <span class="text-muted">- @desk.DeskName</span>
+                                                                }
+                                                            </h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="card-text">
+                                                                <strong>Position:</strong> (@desk.XCoordinate, @desk.YCoordinate)
+                                                            </p>
+                                                            @if (!string.IsNullOrEmpty(desk.Description))
+                                                            {
+                                                                <p class="card-text">
+                                                                    <strong>Description:</strong> @desk.Description
+                                                                </p>
+                                                            }
+                                                            
+                                                            @if (desk.Equipment.Any(e => e.IsActive))
+                                                            {
+                                                                <h6>Assigned Equipment:</h6>
+                                                                <div class="list-group list-group-flush">
+                                                                    @foreach (var equipment in desk.Equipment.Where(e => e.IsActive))
+                                                                    {
+                                                                        <div class="list-group-item">
+                                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                                <div>
+                                                                                    <h6 class="mb-1">@equipment.OATH_Tag</h6>
+                                                                                    <p class="mb-1">@equipment.Model - @equipment.Manufacturer</p>
+                                                                                    @if (equipment.AssetCategory != null)
+                                                                                    {
+                                                                                        <span class="badge bg-secondary me-1">@equipment.AssetCategory.Name</span>
+                                                                                    }
+                                                                                    @if (equipment.CurrentStatus != null)
+                                                                                    {
+                                                                                        <span class="badge" style="background-color: @equipment.CurrentStatus.Color">@equipment.CurrentStatus.Name</span>
+                                                                                    }
+                                                                                </div>
+                                                                                <div class="text-end">
+                                                                                    @if (equipment.AssignedEntraUser != null)
+                                                                                    {
+                                                                                        <small class="text-success">@equipment.AssignedEntraUser.DisplayName</small>
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        <small class="text-muted">Unassigned</small>
+                                                                                    }
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="alert alert-info mb-0">
+                                                                    <i class="fas fa-info-circle me-2"></i>
+                                                                    No equipment assigned to this desk.
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div class="card-footer">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-calendar me-1"></i>
+                                                                Created: @desk.CreatedAt.ToString("MMM dd, yyyy")
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            No desks have been created for this floor plan yet.
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Floor Plan Information
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Location:</strong></td>
+                                            <td>@Model.Location.Name</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Floor Number:</strong></td>
+                                            <td>@Model.FloorNumber</td>
+                                        </tr>
+                                        @if (!string.IsNullOrEmpty(Model.FloorName))
+                                        {
+                                            <tr>
+                                                <td><strong>Floor Name:</strong></td>
+                                                <td>@Model.FloorName</td>
+                                            </tr>
+                                        }
+                                        <tr>
+                                            <td><strong>Total Desks:</strong></td>
+                                            <td>@Model.Desks.Count(d => d.IsActive)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Assigned Equipment:</strong></td>
+                                            <td>@Model.Equipment.Count(e => e.IsActive)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Status:</strong></td>
+                                            <td>
+                                                @if (Model.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Inactive</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Created:</strong></td>
+                                            <td>@Model.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                        </tr>
+                                        @if (Model.UpdatedAt.HasValue)
+                                        {
+                                            <tr>
+                                                <td><strong>Last Updated:</strong></td>
+                                                <td>@Model.UpdatedAt.Value.ToString("MMM dd, yyyy")</td>
+                                            </tr>
+                                        }
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-map-marker-alt me-2"></i>
+                                        Location Details
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <h6>@Model.Location.Name</h6>
+                                    @if (!string.IsNullOrEmpty(Model.Location.Address))
+                                    {
+                                        <p class="mb-1">
+                                            <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                            @Model.Location.Address
+                                        </p>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.Location.City))
+                                    {
+                                        <p class="mb-1">
+                                            <i class="fas fa-city text-muted me-2"></i>
+                                            @Model.Location.City@(!string.IsNullOrEmpty(Model.Location.State) ? $", {Model.Location.State}" : "")
+                                            @if (!string.IsNullOrEmpty(Model.Location.ZipCode))
+                                            {
+                                                <span>@Model.Location.ZipCode</span>
+                                            }
+                                        </p>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.Location.Notes))
+                                    {
+                                        <p class="mb-0">
+                                            <i class="fas fa-sticky-note text-muted me-2"></i>
+                                            @Model.Location.Notes
+                                        </p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

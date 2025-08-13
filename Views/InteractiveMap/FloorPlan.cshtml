@@ -1,0 +1,334 @@
+@model FloorPlan
+@{
+    ViewData["Title"] = $"Floor Plan - {Model.FloorNumber}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-map me-2"></i>
+                                @Model.Location.Name - @Model.FloorNumber
+                                @if (!string.IsNullOrEmpty(Model.FloorName))
+                                {
+                                    <span class="text-muted">(@Model.FloorName)</span>
+                                }
+                            </h3>
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <small class="text-muted">@Model.Description</small>
+                            }
+                        </div>
+                        <div>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to Locations
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-9">
+                            <div class="floor-plan-container" style="position: relative; min-height: 600px; border: 2px solid #dee2e6; border-radius: 8px; background-color: #f8f9fa;">
+                                @if (!string.IsNullOrEmpty(Model.ImagePath))
+                                {
+                                    <img src="@Model.ImagePath" alt="Floor Plan" class="img-fluid" style="width: 100%; height: auto;" />
+                                }
+                                <div id="desks-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                    <!-- Desks will be rendered here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-tools me-2"></i>
+                                        Equipment Panel
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <h6>Unassigned Equipment</h6>
+                                        <div id="unassigned-equipment" class="list-group">
+                                            <!-- Unassigned equipment will be loaded here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6>Desk Information</h6>
+                                        <div id="desk-info" class="alert alert-info" style="display: none;">
+                                            <!-- Selected desk info will be shown here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6>Legend</h6>
+                                        <div class="small">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <div class="desk-indicator available me-2" style="width: 20px; height: 20px; background-color: #28a745; border-radius: 4px;"></div>
+                                                <span>Available</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-1">
+                                                <div class="desk-indicator occupied me-2" style="width: 20px; height: 20px; background-color: #dc3545; border-radius: 4px;"></div>
+                                                <span>Occupied</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-1">
+                                                <div class="desk-indicator selected me-2" style="width: 20px; height: 20px; background-color: #007bff; border-radius: 4px;"></div>
+                                                <span>Selected</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equipment Details Modal -->
+<div class="modal fade" id="equipmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Equipment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="equipmentModalBody">
+                <!-- Equipment details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="assignEquipmentBtn">Assign to Desk</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let selectedDeskId = null;
+        let selectedEquipmentId = null;
+        let floorPlanData = null;
+
+        $(document).ready(function() {
+            loadFloorPlanData();
+            loadUnassignedEquipment();
+        });
+
+        function loadFloorPlanData() {
+            $.get('@Url.Action("GetFloorPlanData", new { id = Model.Id })')
+                .done(function(data) {
+                    floorPlanData = data;
+                    renderDesks();
+                })
+                .fail(function() {
+                    alert('Failed to load floor plan data');
+                });
+        }
+
+        function loadUnassignedEquipment() {
+            $.get('@Url.Action("GetUnassignedEquipment")')
+                .done(function(data) {
+                    renderUnassignedEquipment(data);
+                })
+                .fail(function() {
+                    console.error('Failed to load unassigned equipment');
+                });
+        }
+
+        function renderDesks() {
+            const container = $('#desks-container');
+            container.empty();
+
+            floorPlanData.desks.forEach(function(desk) {
+                const deskElement = createDeskElement(desk);
+                container.append(deskElement);
+            });
+        }
+
+        function createDeskElement(desk) {
+            const hasEquipment = desk.equipment && desk.equipment.length > 0;
+            const backgroundColor = hasEquipment ? '#dc3545' : '#28a745';
+            const equipmentCount = hasEquipment ? desk.equipment.length : 0;
+
+            const deskHtml = `
+                <div class="desk-item" 
+                     data-desk-id="${desk.id}"
+                     style="position: absolute; left: ${desk.x}px; top: ${desk.y}px; width: 80px; height: 60px; background-color: ${backgroundColor}; border: 2px solid #333; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; z-index: 10;"
+                     title="${desk.deskName || desk.deskNumber}">
+                    <div>${desk.deskNumber}</div>
+                    ${equipmentCount > 0 ? `<div style="font-size: 10px;">${equipmentCount} items</div>` : ''}
+                </div>
+            `;
+
+            const $desk = $(deskHtml);
+            
+            $desk.on('click', function() {
+                selectDesk(desk.id);
+            });
+
+            // Make desks draggable
+            $desk.draggable({
+                containment: "parent",
+                stop: function(event, ui) {
+                    const newX = Math.round(ui.position.left);
+                    const newY = Math.round(ui.position.top);
+                    updateDeskPosition(desk.id, newX, newY);
+                }
+            });
+
+            return $desk;
+        }
+
+        function renderUnassignedEquipment(equipment) {
+            const container = $('#unassigned-equipment');
+            container.empty();
+
+            if (equipment.length === 0) {
+                container.append('<div class="text-muted">No unassigned equipment</div>');
+                return;
+            }
+
+            equipment.forEach(function(item) {
+                const equipmentHtml = `
+                    <div class="list-group-item list-group-item-action equipment-item" 
+                         data-equipment-id="${item.id}"
+                         style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${item.oathTag}</h6>
+                                <p class="mb-1">${item.model} - ${item.manufacturer}</p>
+                                <small class="text-muted">${item.category || 'No Category'}</small>
+                            </div>
+                            <span class="badge" style="background-color: ${item.statusColor || '#007bff'}">${item.status || 'No Status'}</span>
+                        </div>
+                        ${item.assignedUser ? `<small class="text-muted">Assigned to: ${item.assignedUser}</small>` : ''}
+                    </div>
+                `;
+
+                const $equipment = $(equipmentHtml);
+                $equipment.on('click', function() {
+                    showEquipmentDetails(item);
+                });
+
+                container.append($equipment);
+            });
+        }
+
+        function selectDesk(deskId) {
+            // Remove previous selection
+            $('.desk-item').css('border-color', '#333');
+            
+            // Highlight selected desk
+            $(`.desk-item[data-desk-id="${deskId}"]`).css('border-color', '#007bff');
+            
+            selectedDeskId = deskId;
+            
+            // Show desk information
+            const desk = floorPlanData.desks.find(d => d.id === deskId);
+            if (desk) {
+                showDeskInfo(desk);
+            }
+        }
+
+        function showDeskInfo(desk) {
+            const infoHtml = `
+                <h6>${desk.deskName || desk.deskNumber}</h6>
+                <p class="mb-2">Equipment: ${desk.equipment.length} items</p>
+                ${desk.equipment.map(eq => `
+                    <div class="small mb-1">
+                        <strong>${eq.oathTag}</strong> - ${eq.model}
+                        ${eq.assignedUser ? `<br><small class="text-muted">User: ${eq.assignedUser}</small>` : ''}
+                    </div>
+                `).join('')}
+            `;
+            
+            $('#desk-info').html(infoHtml).show();
+        }
+
+        function showEquipmentDetails(equipment) {
+            selectedEquipmentId = equipment.id;
+            
+            const detailsHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Equipment Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>OATH Tag:</strong></td><td>${equipment.oathTag}</td></tr>
+                            <tr><td><strong>Asset Tag:</strong></td><td>${equipment.assetTag || 'N/A'}</td></tr>
+                            <tr><td><strong>Model:</strong></td><td>${equipment.model}</td></tr>
+                            <tr><td><strong>Manufacturer:</strong></td><td>${equipment.manufacturer}</td></tr>
+                            <tr><td><strong>Category:</strong></td><td>${equipment.category || 'N/A'}</td></tr>
+                            <tr><td><strong>Status:</strong></td><td><span class="badge" style="background-color: ${equipment.statusColor || '#007bff'}">${equipment.status || 'N/A'}</span></td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Assignment Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Assigned User:</strong></td><td>${equipment.assignedUser || 'Unassigned'}</td></tr>
+                            <tr><td><strong>User Email:</strong></td><td>${equipment.assignedEmail || 'N/A'}</td></tr>
+                            <tr><td><strong>Current Location:</strong></td><td>Unassigned to Desk</td></tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            $('#equipmentModalBody').html(detailsHtml);
+            $('#equipmentModal').modal('show');
+        }
+
+        function updateDeskPosition(deskId, x, y) {
+            $.post('@Url.Action("UpdateDeskPosition")', { deskId: deskId, x: x, y: y })
+                .done(function() {
+                    // Update the desk data
+                    const desk = floorPlanData.desks.find(d => d.id === deskId);
+                    if (desk) {
+                        desk.x = x;
+                        desk.y = y;
+                    }
+                })
+                .fail(function() {
+                    alert('Failed to update desk position');
+                });
+        }
+
+        $('#assignEquipmentBtn').on('click', function() {
+            if (selectedEquipmentId && selectedDeskId) {
+                assignEquipmentToDesk(selectedEquipmentId, selectedDeskId);
+            } else {
+                alert('Please select both equipment and desk');
+            }
+        });
+
+        function assignEquipmentToDesk(equipmentId, deskId) {
+            $.post('@Url.Action("AssignEquipmentToDesk")', { equipmentId: equipmentId, deskId: deskId })
+                .done(function() {
+                    $('#equipmentModal').modal('hide');
+                    loadFloorPlanData();
+                    loadUnassignedEquipment();
+                    alert('Equipment assigned successfully');
+                })
+                .fail(function() {
+                    alert('Failed to assign equipment');
+                });
+        }
+
+        // Add jQuery UI for draggable functionality
+        if (typeof $.fn.draggable === 'undefined') {
+            $('<script>').attr('src', 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js').appendTo('head');
+            $('<link>').attr({
+                rel: 'stylesheet',
+                href: 'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css'
+            }).appendTo('head');
+        }
+    </script>
+}

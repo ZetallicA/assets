@@ -1,0 +1,281 @@
+@model EntraUser
+@{
+    ViewData["Title"] = $"User Details - {Model.DisplayName}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-user me-2"></i>
+                                @Model.DisplayName
+                            </h3>
+                            <small class="text-muted">@Model.UserPrincipalName</small>
+                        </div>
+                        <div>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>
+                                Edit
+                            </a>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to List
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        User Information
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Display Name:</strong></td>
+                                            <td>@Model.DisplayName</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Email:</strong></td>
+                                            <td>@Model.UserPrincipalName</td>
+                                        </tr>
+                                        @if (!string.IsNullOrEmpty(Model.GivenName))
+                                        {
+                                            <tr>
+                                                <td><strong>First Name:</strong></td>
+                                                <td>@Model.GivenName</td>
+                                            </tr>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.Surname))
+                                        {
+                                            <tr>
+                                                <td><strong>Last Name:</strong></td>
+                                                <td>@Model.Surname</td>
+                                            </tr>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.JobTitle))
+                                        {
+                                            <tr>
+                                                <td><strong>Job Title:</strong></td>
+                                                <td>@Model.JobTitle</td>
+                                            </tr>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.Department))
+                                        {
+                                            <tr>
+                                                <td><strong>Department:</strong></td>
+                                                <td>@Model.Department</td>
+                                            </tr>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.OfficeLocation))
+                                        {
+                                            <tr>
+                                                <td><strong>Office Location:</strong></td>
+                                                <td>@Model.OfficeLocation</td>
+                                            </tr>
+                                        }
+                                        <tr>
+                                            <td><strong>Status:</strong></td>
+                                            <td>
+                                                @if (Model.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Inactive</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Object ID:</strong></td>
+                                            <td><small class="text-muted">@Model.ObjectId</small></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Created:</strong></td>
+                                            <td>@Model.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                        </tr>
+                                        @if (Model.UpdatedAt.HasValue)
+                                        {
+                                            <tr>
+                                                <td><strong>Last Updated:</strong></td>
+                                                <td>@Model.UpdatedAt.Value.ToString("MMM dd, yyyy")</td>
+                                            </tr>
+                                        }
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-laptop me-2"></i>
+                                        Assigned Equipment (@Model.AssignedEquipment.Count(e => e.IsActive))
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.AssignedEquipment.Any(e => e.IsActive))
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>OATH Tag</th>
+                                                        <th>Asset Tag</th>
+                                                        <th>Model</th>
+                                                        <th>Manufacturer</th>
+                                                        <th>Category</th>
+                                                        <th>Status</th>
+                                                        <th>Location</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var equipment in Model.AssignedEquipment.Where(e => e.IsActive))
+                                                    {
+                                                        <tr>
+                                                            <td>
+                                                                <strong>@equipment.OATH_Tag</strong>
+                                                            </td>
+                                                            <td>@equipment.Asset_Tag</td>
+                                                            <td>@equipment.Model</td>
+                                                            <td>@equipment.Manufacturer</td>
+                                                            <td>
+                                                                @if (equipment.AssetCategory != null)
+                                                                {
+                                                                    <span class="badge bg-secondary">@equipment.AssetCategory.Name</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="text-muted">-</span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                @if (equipment.CurrentStatus != null)
+                                                                {
+                                                                    <span class="badge" style="background-color: @equipment.CurrentStatus.Color">@equipment.CurrentStatus.Name</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="text-muted">-</span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                @if (equipment.CurrentLocation != null)
+                                                                {
+                                                                    <div>
+                                                                        <strong>@equipment.CurrentLocation.Name</strong>
+                                                                        @if (equipment.CurrentFloorPlan != null)
+                                                                        {
+                                                                            <br><small class="text-muted">@equipment.CurrentFloorPlan.FloorNumber</small>
+                                                                        }
+                                                                        @if (equipment.CurrentDesk != null)
+                                                                        {
+                                                                            <br><small class="text-muted">Desk: @equipment.CurrentDesk.DeskNumber</small>
+                                                                        }
+                                                                    </div>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="text-muted">No location assigned</span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-outline-danger" 
+                                                                        onclick="unassignEquipment(@Model.Id, @equipment.Id, '@equipment.OATH_Tag')">
+                                                                    <i class="fas fa-user-times"></i>
+                                                                    Unassign
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            No equipment is currently assigned to this user.
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unassign Confirmation Modal -->
+<div class="modal fade" id="unassignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Unassignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to unassign equipment <strong id="equipmentTag"></strong> from this user?</p>
+                <p class="text-muted">This will remove the equipment assignment but keep the equipment record intact.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmUnassign">Unassign Equipment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentUserId = null;
+        let currentEquipmentId = null;
+
+        function unassignEquipment(userId, equipmentId, equipmentTag) {
+            currentUserId = userId;
+            currentEquipmentId = equipmentId;
+            document.getElementById('equipmentTag').textContent = equipmentTag;
+            new bootstrap.Modal(document.getElementById('unassignModal')).show();
+        }
+
+        document.getElementById('confirmUnassign').addEventListener('click', function() {
+            if (currentUserId && currentEquipmentId) {
+                fetch('@Url.Action("UnassignEquipment")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: `userId=${currentUserId}&equipmentId=${currentEquipmentId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to unassign equipment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while unassigning equipment');
+                });
+            }
+        });
+    </script>
+}

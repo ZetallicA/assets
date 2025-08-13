@@ -1,0 +1,384 @@
+﻿@model DashboardViewModel
+@{
+    ViewData["Title"] = "Asset Management Dashboard";
+}
+
+<div class="container-fluid">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Equipment
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalEquipment</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-laptop fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Assigned Equipment
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.AssignedEquipment</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Unassigned Equipment
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.UnassignedEquipment</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Locations
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalLocations</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-building fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                Floor Plans
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalFloorPlans</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-map fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-dark shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">
+                                Total Desks
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalDesks</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chair fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Active Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalUsers</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Assignment Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @(Model.TotalEquipment > 0 ? $"{((double)Model.AssignedEquipment / Model.TotalEquipment * 100):F1}%" : "0%")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Recent Equipment -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Equipment</h6>
+                    <a asp-controller="Equipment" asp-action="Index" class="btn btn-sm btn-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (!Model.RecentEquipment.Any())
+                    {
+                        <div class="text-center text-muted">
+                            <i class="fas fa-laptop fa-3x mb-3"></i>
+                            <p>No equipment found. <a asp-controller="Import" asp-action="Index">Import equipment</a> to get started.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var equipment in Model.RecentEquipment)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">@equipment.OATH_Tag</h6>
+                                        <p class="mb-1">@equipment.Model - @equipment.Manufacturer</p>
+                                        <small class="text-muted">
+                                            @if (equipment.AssetCategory != null)
+                                            {
+                                                <span class="badge bg-secondary me-1">@equipment.AssetCategory.Name</span>
+                                            }
+                                            @if (equipment.CurrentStatus != null)
+                                            {
+                                                <span class="badge" style="background-color: @equipment.CurrentStatus.Color">@equipment.CurrentStatus.Name</span>
+                                            }
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        @if (equipment.AssignedEntraUser != null)
+                                        {
+                                            <small class="text-success">Assigned to @equipment.AssignedEntraUser.DisplayName</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">Unassigned</small>
+                                        }
+                                        <br>
+                                        <small class="text-muted">@equipment.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Unassigned Equipment -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-warning">Unassigned Equipment</h6>
+                    <a asp-controller="Equipment" asp-action="Index" class="btn btn-sm btn-warning">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (!Model.UnassignedEquipmentList.Any())
+                    {
+                        <div class="text-center text-muted">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                            <p>All equipment is assigned!</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var equipment in Model.UnassignedEquipmentList)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">@equipment.OATH_Tag</h6>
+                                        <p class="mb-1">@equipment.Model - @equipment.Manufacturer</p>
+                                        <small class="text-muted">
+                                            @if (equipment.AssetCategory != null)
+                                            {
+                                                <span class="badge bg-secondary me-1">@equipment.AssetCategory.Name</span>
+                                            }
+                                            @if (equipment.CurrentStatus != null)
+                                            {
+                                                <span class="badge" style="background-color: @equipment.CurrentStatus.Color">@equipment.CurrentStatus.Name</span>
+                                            }
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-warning">Needs Assignment</small>
+                                        <br>
+                                        <small class="text-muted">@equipment.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Locations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-info">Recent Locations</h6>
+                    <a asp-controller="Location" asp-action="Index" class="btn btn-sm btn-info">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (!Model.RecentLocations.Any())
+                    {
+                        <div class="text-center text-muted">
+                            <i class="fas fa-building fa-3x mb-3"></i>
+                            <p>No locations found. <a asp-controller="Location" asp-action="Create">Create your first location</a>.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            @foreach (var location in Model.RecentLocations)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-info">
+                                        <div class="card-body">
+                                            <h5 class="card-title">@location.Name</h5>
+                                            @if (!string.IsNullOrEmpty(location.Address))
+                                            {
+                                                <p class="card-text">
+                                                    <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                                    @location.Address
+                                                </p>
+                                            }
+                                            @if (!string.IsNullOrEmpty(location.City))
+                                            {
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-city me-2"></i>
+                                                        @location.City@(!string.IsNullOrEmpty(location.State) ? $", {location.State}" : "")
+                                                    </small>
+                                                </p>
+                                            }
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-2"></i>
+                                                    Created @location.CreatedAt.ToString("MMM dd, yyyy")
+                                                </small>
+                                            </p>
+                                            <a asp-controller="Location" asp-action="Details" asp-route-id="@location.Id" class="btn btn-sm btn-outline-info">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a asp-controller="Import" asp-action="Index" class="btn btn-success btn-lg w-100">
+                                <i class="fas fa-file-import fa-2x mb-2"></i>
+                                <br>Import Equipment
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a asp-controller="InteractiveMap" asp-action="Index" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-map fa-2x mb-2"></i>
+                                <br>Floor Plans
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a asp-controller="Location" asp-action="Create" class="btn btn-info btn-lg w-100">
+                                <i class="fas fa-building fa-2x mb-2"></i>
+                                <br>Add Location
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a asp-controller="Equipment" asp-action="Index" class="btn btn-secondary btn-lg w-100">
+                                <i class="fas fa-laptop fa-2x mb-2"></i>
+                                <br>Manage Equipment
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a asp-controller="Seed" asp-action="Index" class="btn btn-warning btn-lg w-100">
+                                <i class="fas fa-database fa-2x mb-2"></i>
+                                <br>Seed OATH Data
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a asp-controller="EntraUser" asp-action="Index" class="btn btn-dark btn-lg w-100">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <br>Manage Users
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,315 @@
+@model Location
+@{
+    ViewData["Title"] = $"Location Details - {Model.Name}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-building me-2"></i>
+                            Location Details: @Model.Name
+                        </h3>
+                        <div>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>
+                                Edit
+                            </a>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to List
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Location Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Name:</strong></td>
+                                    <td>@Model.Name</td>
+                                </tr>
+                                @if (!string.IsNullOrEmpty(Model.Address))
+                                {
+                                    <tr>
+                                        <td><strong>Address:</strong></td>
+                                        <td>@Model.Address</td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.City))
+                                {
+                                    <tr>
+                                        <td><strong>City:</strong></td>
+                                        <td>@Model.City</td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.State))
+                                {
+                                    <tr>
+                                        <td><strong>State:</strong></td>
+                                        <td>@Model.State</td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.ZipCode))
+                                {
+                                    <tr>
+                                        <td><strong>ZIP Code:</strong></td>
+                                        <td>@Model.ZipCode</td>
+                                    </tr>
+                                }
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        @if (Model.IsActive)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Created:</strong></td>
+                                    <td>@Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</td>
+                                </tr>
+                                @if (Model.UpdatedAt.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>Last Updated:</strong></td>
+                                        <td>@Model.UpdatedAt.Value.ToString("MMM dd, yyyy 'at' h:mm tt")</td>
+                                    </tr>
+                                }
+                            </table>
+
+                            @if (!string.IsNullOrEmpty(Model.Notes))
+                            {
+                                <div class="mt-3">
+                                    <h6>Notes:</h6>
+                                    <div class="alert alert-info">
+                                        @Model.Notes
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5>Statistics</h5>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body text-center">
+                                            <h3>@Model.FloorPlans.Count(f => f.IsActive)</h3>
+                                            <p class="mb-0">Floor Plans</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body text-center">
+                                            <h3>@Model.FloorPlans.SelectMany(f => f.Desks).Count(d => d.IsActive)</h3>
+                                            <p class="mb-0">Desks</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mt-3">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body text-center">
+                                            <h3>@Model.Equipment.Count(e => e.IsActive)</h3>
+                                            <p class="mb-0">Equipment Items</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mt-3">
+                                    <div class="card bg-warning text-white">
+                                        <div class="card-body text-center">
+                                            <h3>@Model.Equipment.Count(e => e.IsActive && e.AssignedEntraUserId != null)</h3>
+                                            <p class="mb-0">Assigned Items</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Floor Plans</h5>
+                            @if (!Model.FloorPlans.Any(f => f.IsActive))
+                            {
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No floor plans found for this location. 
+                                    <a href="@Url.Action("Create", "FloorPlan")" class="alert-link">Create a floor plan</a>.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Floor</th>
+                                                <th>Name</th>
+                                                <th>Desks</th>
+                                                <th>Equipment</th>
+                                                <th>Created</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var floorPlan in Model.FloorPlans.Where(f => f.IsActive))
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@floorPlan.FloorNumber</strong>
+                                                    </td>
+                                                    <td>@floorPlan.FloorName</td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">
+                                                            @floorPlan.Desks.Count(d => d.IsActive) desks
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-info">
+                                                            @floorPlan.Equipment.Count(e => e.IsActive) items
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">
+                                                            @floorPlan.CreatedAt.ToString("MMM dd, yyyy")
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="@Url.Action("FloorPlan", "InteractiveMap", new { id = floorPlan.Id })" 
+                                                               class="btn btn-sm btn-outline-primary" title="View Interactive Map">
+                                                                <i class="fas fa-map"></i>
+                                                            </a>
+                                                            <a href="@Url.Action("Details", "FloorPlan", new { id = floorPlan.Id })" 
+                                                               class="btn btn-sm btn-outline-info" title="View Details">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="@Url.Action("Edit", "FloorPlan", new { id = floorPlan.Id })" 
+                                                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Equipment at this Location</h5>
+                            @if (!Model.Equipment.Any(e => e.IsActive))
+                            {
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No equipment found at this location.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>OATH Tag</th>
+                                                <th>Asset Tag</th>
+                                                <th>Model</th>
+                                                <th>Category</th>
+                                                <th>Status</th>
+                                                <th>Assigned To</th>
+                                                <th>Desk</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var equipment in Model.Equipment.Where(e => e.IsActive).Take(10))
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@equipment.OATH_Tag</strong>
+                                                    </td>
+                                                    <td>@equipment.Asset_Tag</td>
+                                                    <td>@equipment.Model</td>
+                                                    <td>
+                                                        @if (equipment.AssetCategory != null)
+                                                        {
+                                                            <span class="badge bg-secondary">@equipment.AssetCategory.Name</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">No Category</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (equipment.CurrentStatus != null)
+                                                        {
+                                                            <span class="badge" style="background-color: @equipment.CurrentStatus.Color">
+                                                                @equipment.CurrentStatus.Name
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">No Status</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (equipment.AssignedEntraUser != null)
+                                                        {
+                                                            <span>@equipment.AssignedEntraUser.DisplayName</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">Unassigned</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (equipment.CurrentDesk != null)
+                                                        {
+                                                            <span>@equipment.CurrentDesk.DeskNumber</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">No Desk</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                    
+                                    @if (Model.Equipment.Count(e => e.IsActive) > 10)
+                                    {
+                                        <div class="text-center mt-3">
+                                            <a href="@Url.Action("Index", "Equipment")" class="btn btn-outline-primary">
+                                                View All Equipment (@Model.Equipment.Count(e => e.IsActive) total)
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

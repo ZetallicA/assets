@@ -1,0 +1,384 @@
+@model AssetManagement.Models.Equipment
+@{
+    ViewData["Title"] = "Equipment Details";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Equipment Details</h1>
+            <p class="text-muted mb-0">@Model.OATH_Tag</p>
+        </div>
+        <div class="btn-group" role="group">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            @if (Model.IsCheckedOut)
+            {
+                <a asp-action="CheckIn" asp-route-id="@Model.Id" class="btn btn-success">
+                    <i class="bi bi-box-arrow-in-down"></i> Check In
+                </a>
+            }
+            else
+            {
+                <a asp-action="CheckOut" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-box-arrow-up"></i> Check Out
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Basic Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">OATH Tag</dt>
+                                <dd class="col-sm-8"><strong>@Model.OATH_Tag</strong></dd>
+
+                                <dt class="col-sm-4">Serial Number</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Serial_Number) ? "-" : Model.Serial_Number)</dd>
+
+                                <dt class="col-sm-4">Category</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.AssetCategory != null)
+                                    {
+                                        <span class="badge bg-info">@Model.AssetCategory.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Status</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.CurrentStatus != null)
+                                    {
+                                        <span class="badge" style="background-color: @Model.CurrentStatus.Color; color: white;">
+                                            @Model.CurrentStatus.Name
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    }
+                                    @if (Model.IsCheckedOut)
+                                    {
+                                        <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Checked Out</small>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Manufacturer</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Manufacturer) ? "-" : Model.Manufacturer)</dd>
+
+                                <dt class="col-sm-4">Model</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Model) ? "-" : Model.Model)</dd>
+
+                                <dt class="col-sm-4">Computer Name</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Computer_Name))
+                                    {
+                                        <span class="badge bg-secondary">@Model.Computer_Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Purchase Price</dt>
+                                <dd class="col-sm-8">@(Model.PurchasePrice?.ToString("C") ?? "-")</dd>
+
+                                <dt class="col-sm-4">Purchase Date</dt>
+                                <dd class="col-sm-8">@(Model.PurchaseDate?.ToString("MM/dd/yyyy") ?? "-")</dd>
+
+                                <dt class="col-sm-4">Condition</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Condition))
+                                    {
+                                        <span class="badge bg-secondary">@Model.Condition</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">OS Version</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.OS_Version) ? "-" : Model.OS_Version)</dd>
+
+                                <dt class="col-sm-4">IP Address</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.IP_Address) ? "-" : Model.IP_Address)</dd>
+
+                                <dt class="col-sm-4">Department</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Department) ? "-" : Model.Department)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-geo-alt"></i> Location Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Location</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.CurrentLocation != null)
+                                    {
+                                        <span>@Model.CurrentLocation.Name</span>
+                                        @if (!string.IsNullOrEmpty(Model.CurrentLocation.Address))
+                                        {
+                                            <br><small class="text-muted">@Model.CurrentLocation.Address</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Floor Plan</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.CurrentFloorPlan != null)
+                                    {
+                                        <span>@Model.CurrentFloorPlan.FloorNumber</span>
+                                        @if (!string.IsNullOrEmpty(Model.CurrentFloorPlan.FloorName))
+                                        {
+                                            <br><small class="text-muted">@Model.CurrentFloorPlan.FloorName</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Desk</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.CurrentDesk != null)
+                                    {
+                                        <span>@Model.CurrentDesk.DeskNumber</span>
+                                        @if (!string.IsNullOrEmpty(Model.CurrentDesk.DeskName))
+                                        {
+                                            <br><small class="text-muted">@Model.CurrentDesk.DeskName</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Location Notes</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Current_Location_Notes) ? "-" : Model.Current_Location_Notes)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person"></i> Assignment Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Assigned User</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Assigned_User_Name))
+                                    {
+                                        <span>@Model.Assigned_User_Name</span>
+                                        @if (!string.IsNullOrEmpty(Model.Assigned_User_Email))
+                                        {
+                                            <br><small class="text-muted">@Model.Assigned_User_Email</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Assigned Person</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.AssignedPerson != null)
+                                    {
+                                        <span>@Model.AssignedPerson.FullName</span>
+                                        @if (!string.IsNullOrEmpty(Model.AssignedPerson.Email))
+                                        {
+                                            <br><small class="text-muted">@Model.AssignedPerson.Email</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Entra User</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.AssignedEntraUser != null)
+                                    {
+                                        <span>@Model.AssignedEntraUser.DisplayName</span>
+                                        @if (!string.IsNullOrEmpty(Model.AssignedEntraUser.Mail))
+                                        {
+                                            <br><small class="text-muted">@Model.AssignedEntraUser.Mail</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Phone Number</dt>
+                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Phone_Number) ? "-" : Model.Phone_Number)</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i> Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.AuditLogs.Any())
+                    {
+                        <div class="timeline">
+                            @foreach (var log in Model.AuditLogs.Take(5))
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">@log.Action</h6>
+                                        <p class="timeline-text">@log.AdditionalData</p>
+                                        <small class="text-muted">
+                                            @log.PerformedAt.ToString("MM/dd/yyyy HH:mm") by @log.PerformedBy
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No recent activity</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-calendar"></i> Important Dates
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Created</dt>
+                        <dd class="col-sm-6">@Model.CreatedAt.ToString("MM/dd/yyyy")</dd>
+
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <dt class="col-sm-6">Last Updated</dt>
+                            <dd class="col-sm-6">@Model.UpdatedAt.Value.ToString("MM/dd/yyyy")</dd>
+                        }
+
+                        @if (Model.WarrantyStartDate.HasValue)
+                        {
+                            <dt class="col-sm-6">Warranty Start</dt>
+                            <dd class="col-sm-6">@Model.WarrantyStartDate.Value.ToString("MM/dd/yyyy")</dd>
+                        }
+
+                        @if (Model.WarrantyEndDate.HasValue)
+                        {
+                            <dt class="col-sm-6">Warranty End</dt>
+                            <dd class="col-sm-6">@Model.WarrantyEndDate.Value.ToString("MM/dd/yyyy")</dd>
+                        }
+
+                        @if (Model.ExpectedReturnDate.HasValue)
+                        {
+                            <dt class="col-sm-6">Expected Return</dt>
+                            <dd class="col-sm-6">@Model.ExpectedReturnDate.Value.ToString("MM/dd/yyyy")</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #007bff;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin-bottom: 5px;
+    color: #6c757d;
+}
+</style>
