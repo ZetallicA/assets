@@ -6,7 +6,7 @@ echo.
 
 echo Setting Git user configuration...
 git config user.name "ZetallicA"
-git config user.email "zetallica@example.com"
+git config user.email "rabi.hamsi@gmail.com"
 
 echo.
 echo Git configuration set:
