@@ -6,6 +6,7 @@ using AssetManagement.Models;
 
 namespace AssetManagement.Controllers
 {
+    [Route("[controller]")]
     public class FloorPlanController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -17,6 +18,8 @@ namespace AssetManagement.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        [HttpGet("")]
+        [HttpGet("Index")]
         public async Task<IActionResult> Index()
         {
             var floorPlans = await _context.FloorPlans
@@ -262,23 +265,50 @@ namespace AssetManagement.Controllers
             return Json(new { success = true });
         }
 
-        [HttpGet]
+        [HttpGet("GetFloorPlansByLocation/{locationId}")]
         public async Task<IActionResult> GetFloorPlansByLocation(int locationId)
         {
-            var floorPlans = await _context.FloorPlans
-                .Where(f => f.LocationId == locationId && f.IsActive)
+            // Debug: Log the location being requested with stack trace to see WHO called this
+            var stackTrace = new System.Diagnostics.StackTrace();
+            Console.WriteLine($"=== API CALL DEBUG ===");
+            Console.WriteLine($"Requested floor plans for location ID: {locationId}");
+            Console.WriteLine($"Called at: {DateTime.Now:HH:mm:ss.fff}");
+            Console.WriteLine($"Request URL: {Request.Path}{Request.QueryString}");
+            Console.WriteLine($"========================");
+            
+            // First, check if the location exists
+            var location = await _context.Locations.FindAsync(locationId);
+            Console.WriteLine($"Location found: {location?.Name ?? "NULL"}");
+            
+            // Get all floor plans for this location (including inactive ones for debugging)
+            var allFloorPlans = await _context.FloorPlans
+                .Where(f => f.LocationId == locationId)
                 .Select(f => new
                 {
                     id = f.Id,
                     floorNumber = f.FloorNumber,
-                    floorName = f.FloorName
+                    floorName = f.FloorName,
+                    isActive = f.IsActive
                 })
                 .ToListAsync();
+            
+            Console.WriteLine($"All floor plans for location {locationId}: {string.Join(", ", allFloorPlans.Select(f => $"{f.floorNumber} (Active: {f.isActive})"))}");
+            
+            // Return only active floor plans
+            var activeFloorPlans = allFloorPlans.Where(f => f.isActive).Select(f => new
+            {
+                id = f.id,
+                floorNumber = f.floorNumber,
+                floorName = f.floorName
+            }).ToList();
+            
+            Console.WriteLine($"Active floor plans returned: {activeFloorPlans.Count}");
+            Console.WriteLine($"=== END API CALL ===");
 
-            return Json(floorPlans);
+            return Json(activeFloorPlans);
         }
 
-        [HttpGet]
+        [HttpGet("GetDesksByFloorPlan/{floorPlanId}")]
         public async Task<IActionResult> GetDesksByFloorPlan(int floorPlanId)
         {
             var desks = await _context.Desks

@@ -34,7 +34,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-9">
-                            <div class="floor-plan-container" style="position: relative; min-height: 600px; border: 2px solid #dee2e6; border-radius: 8px; background-color: #f8f9fa;">
+                            <div class="floor-plan-container" id="floor-plan-container" style="position: relative; min-height: 600px; border: 2px solid #dee2e6; border-radius: 8px; background-color: #f8f9fa;">
                                 @if (!string.IsNullOrEmpty(Model.ImagePath))
                                 {
                                     <img src="@Model.ImagePath" alt="Floor Plan" class="img-fluid" style="width: 100%; height: auto;" />
@@ -42,6 +42,12 @@
                                 <div id="desks-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
                                     <!-- Desks will be rendered here dynamically -->
                                 </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> 
+                                    Right-click on the floor plan to add a new desk. Click and drag existing desks to move them.
+                                </small>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -113,6 +119,45 @@
     </div>
 </div>
 
+<!-- Create Desk Modal -->
+<div class="modal fade" id="createDeskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Desk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createDeskForm">
+                    <div class="mb-3">
+                        <label for="deskNumber" class="form-label">Desk Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="deskNumber" required placeholder="e.g., A1, B2, 101">
+                        <div class="form-text">Enter a unique desk identifier for this floor</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Position</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="deskX" class="form-label">X Position</label>
+                                <input type="number" class="form-control" id="deskX" readonly>
+                            </div>
+                            <div class="col-6">
+                                <label for="deskY" class="form-label">Y Position</label>
+                                <input type="number" class="form-control" id="deskY" readonly>
+                            </div>
+                        </div>
+                        <div class="form-text">Position is automatically set based on where you right-clicked</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="createDeskBtn">Create Desk</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         let selectedDeskId = null;
@@ -122,6 +167,7 @@
         $(document).ready(function() {
             loadFloorPlanData();
             loadUnassignedEquipment();
+            setupRightClickHandler();
         });
 
         function loadFloorPlanData() {
@@ -321,6 +367,127 @@
                     alert('Failed to assign equipment');
                 });
         }
+
+        function setupRightClickHandler() {
+            $('#floor-plan-container').on('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Calculate relative position within the container
+                const containerOffset = $(this).offset();
+                const x = Math.round(e.pageX - containerOffset.left);
+                const y = Math.round(e.pageY - containerOffset.top);
+                
+                // Show create desk modal
+                showCreateDeskModal(x, y);
+            });
+        }
+
+        function showCreateDeskModal(x, y) {
+            // Set position in the form
+            $('#deskX').val(x);
+            $('#deskY').val(y);
+            
+            // Clear desk number input
+            $('#deskNumber').val('');
+            
+            // Generate a suggested desk number
+            const existingNumbers = floorPlanData.desks.map(d => d.deskNumber);
+            const suggestedNumber = generateNextDeskNumber(existingNumbers);
+            $('#deskNumber').val(suggestedNumber);
+            
+            // Show modal
+            $('#createDeskModal').modal('show');
+        }
+
+        function generateNextDeskNumber(existingNumbers) {
+            // Try simple numeric approach first
+            for (let i = 1; i <= 999; i++) {
+                const num = i.toString().padStart(3, '0');
+                if (!existingNumbers.includes(num)) {
+                    return num;
+                }
+            }
+            
+            // Try alphanumeric approach
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let letter of letters) {
+                for (let i = 1; i <= 99; i++) {
+                    const num = letter + i.toString().padStart(2, '0');
+                    if (!existingNumbers.includes(num)) {
+                        return num;
+                    }
+                }
+            }
+            
+            // Fallback to timestamp
+            return 'D' + Date.now().toString().slice(-6);
+        }
+
+        $('#createDeskBtn').on('click', function() {
+            const deskNumber = $('#deskNumber').val().trim();
+            const x = parseInt($('#deskX').val());
+            const y = parseInt($('#deskY').val());
+            
+            if (!deskNumber) {
+                alert('Please enter a desk number');
+                return;
+            }
+            
+            createNewDesk(@Model.Id, x, y, deskNumber);
+        });
+
+        function createNewDesk(floorPlanId, x, y, deskNumber) {
+            $.post('@Url.Action("CreateDesk")', {
+                floorPlanId: floorPlanId,
+                x: x,
+                y: y,
+                deskNumber: deskNumber
+            })
+            .done(function(response) {
+                if (response.success) {
+                    // Add the new desk to our data and re-render
+                    floorPlanData.desks.push(response.desk);
+                    renderDesks();
+                    $('#createDeskModal').modal('hide');
+                    
+                    // Show success message
+                    showToast('Success', `Desk ${deskNumber} created successfully!`, 'success');
+                } else {
+                    alert(response.message || 'Failed to create desk');
+                }
+            })
+            .fail(function() {
+                alert('Failed to create desk. Please try again.');
+            });
+        }
+
+        function showToast(title, message, type = 'info') {
+            // Simple toast notification (you can replace with a proper toast library)
+            const toast = $(`
+                <div class="toast align-items-center text-bg-${type} border-0" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>${title}:</strong> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `);
+            
+            $('body').append(toast);
+            toast.toast({ delay: 3000 }).toast('show');
+            
+            // Remove from DOM after it's hidden
+            toast.on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+
+        // Prevent default context menu on desk elements to allow floor plan right-click
+        $(document).on('contextmenu', '.desk-item', function(e) {
+            e.stopPropagation();
+            // You could add desk-specific context menu here
+        });
 
         // Add jQuery UI for draggable functionality
         if (typeof $.fn.draggable === 'undefined') {

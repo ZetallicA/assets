@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Import Equipment";
+    ViewData["Title"] = "Equipment Lifecycle Import";
 }
 
 <div class="container-fluid">
@@ -9,10 +9,47 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-file-import me-2"></i>
-                        Import Equipment Data
+                        Equipment Lifecycle Import System
                     </h3>
+                    <p class="text-muted mb-0">Three-phase workflow: Register → Configure → Assign</p>
                 </div>
                 <div class="card-body">
+                    @if (TempData["ImportSuccess"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            @TempData["ImportSuccess"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["ImportWarning"] != null)
+                    {
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @TempData["ImportWarning"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["ImportError"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-times-circle me-2"></i>
+                            @TempData["ImportError"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["ImportInfo"] != null)
+                    {
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            @TempData["ImportInfo"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
                     @if (TempData["Success"] != null)
                     {
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -31,57 +68,119 @@
                         </div>
                     }
 
-                    @if (TempData["ImportErrors"] != null)
-                    {
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Import Errors:</strong><br />
-                            @TempData["ImportErrors"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
 
-                    @if (TempData["DuplicateCount"] != null && (int)TempData["DuplicateCount"] > 0)
-                    {
-                        <div class="alert alert-info alert-dismissible fade show" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Duplicate Records Found:</strong> @TempData["DuplicateCount"] records were flagged for review.
-                            <div class="mt-2">
-                                <a href="@Url.Action("DownloadDuplicateRecords")" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-download me-1"></i>
-                                    Download Duplicate Records Excel
-                                </a>
-                                <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="showDuplicateReview()">
-                                    <i class="fas fa-eye me-1"></i>
-                                    Review Duplicates Below
-                                </button>
-                            </div>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+
+
+                    <!-- Workflow Phase Templates -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="mb-3">
+                                        <i class="fas fa-download me-2"></i>
+                                Download Workflow Templates
+                            </h4>
+                            <p class="text-muted">Choose the appropriate template for your current workflow phase:</p>
                         </div>
-                    }
+                    </div>
+
+                    <div class="row mb-4">
+                        <!-- Phase 1: Equipment Registration -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-info h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-clipboard-list me-2"></i>
+                                        Phase 1: Registration
+                                    </h6>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <p class="text-muted small flex-grow-1">
+                                        Basic equipment registration with minimal required data. For procurement team.
+                                    </p>
+                                    <div class="text-center">
+                                        <a href="@Url.Action("DownloadExcelTemplate", new { templateType = "equipment" })" class="btn btn-info btn-sm">
+                                            <i class="fas fa-download me-1"></i>
+                                            Equipment Registration
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 2: Configuration -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-purple h-100">
+                                <div class="card-header" style="background-color: #6f42c1; color: white;">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-cogs me-2"></i>
+                                        Phase 2: Configuration
+                                    </h6>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <p class="text-muted small flex-grow-1">
+                                        Technical configuration data: IP, MAC, wall ports, desk assignments. For coordinators.
+                                    </p>
+                                    <div class="text-center">
+                                        <a href="@Url.Action("DownloadExcelTemplate", new { templateType = "configuration" })" class="btn btn-sm" style="background-color: #6f42c1; color: white;">
+                                    <i class="fas fa-download me-1"></i>
+                                            Configuration Template
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 3: People Management -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-users me-2"></i>
+                                        Phase 3: People
+                                    </h6>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <p class="text-muted small flex-grow-1">
+                                        Entra ID user import for equipment assignment. For managers and HR.
+                                    </p>
+                                    <div class="text-center">
+                                        <a href="@Url.Action("DownloadExcelTemplate", new { templateType = "people" })" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-download me-1"></i>
+                                            People Template
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Complete Inventory -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-success h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-clipboard-check me-2"></i>
+                                        Complete Inventory
+                                    </h6>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <p class="text-muted small flex-grow-1">
+                                        Full inventory template with all phases combined. For complete data imports.
+                                    </p>
+                                    <div class="text-center">
+                                        <a href="@Url.Action("DownloadExcelTemplate", new { templateType = "inventory" })" class="btn btn-success btn-sm">
+                                            <i class="fas fa-download me-1"></i>
+                                            Full Inventory
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="card border-primary">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-download me-2"></i>
-                                        Download Template
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <p class="text-muted">
-                                        Download the Excel template to ensure your data is formatted correctly for import.
-                                    </p>
-                                    <a href="@Url.Action("DownloadExcelTemplate")" class="btn btn-primary">
-                                        <i class="fas fa-download me-2"></i>
-                                        Download Excel Template
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="card border-success">
                                 <div class="card-header bg-success text-white">
                                     <h5 class="mb-0">
@@ -91,10 +190,24 @@
                                 </div>
                                 <div class="card-body">
                                     <form asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="importType" class="form-label">Import Type</label>
+                                                    <select class="form-select" id="importType" name="importType" required onchange="updateFormForImportType()">
+                                                        <option value="equipment">Phase 1: Equipment Registration</option>
+                                                        <option value="configuration">Phase 2: Configuration</option>
+                                                        <option value="people">Phase 3: People Import</option>
+                                                        <option value="inventory">Complete Inventory</option>
+                                                    </select>
+                                                    <div class="form-text">Choose the workflow phase you're importing data for.</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4" id="locationSection">
                                         <div class="mb-3">
                                             <label for="locationId" class="form-label">Target Location</label>
-                                            <select class="form-select" id="locationId" name="locationId" required>
-                                                <option value="">Select a location for this import...</option>
+                                                    <select class="form-select" id="locationId" name="locationId">
+                                                        <option value="">Select a location...</option>
                                                 @if (ViewBag.Locations != null)
                                                 {
                                                     @foreach (var location in (List<AssetManagement.Models.Location>)ViewBag.Locations)
@@ -103,17 +216,23 @@
                                                     }
                                                 }
                                             </select>
-                                            <div class="form-text">All equipment in the Excel file will be assigned to this location. Floor plans and desks will be created under this location.</div>
+                                                    <div class="form-text">Required for equipment registration and inventory imports.</div>
+                                                </div>
                                         </div>
+                                            <div class="col-md-4">
                                         <div class="mb-3">
                                             <label for="file" class="form-label">Select Excel File</label>
                                             <input type="file" class="form-control" id="file" name="file" accept=".xlsx" required />
                                             <div class="form-text">Only .xlsx files are supported.</div>
                                         </div>
-                                        <button type="submit" class="btn btn-success">
+                                            </div>
+                                        </div>
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-success btn-lg">
                                             <i class="fas fa-upload me-2"></i>
-                                            Import Equipment Data
+                                                <span id="importButtonText">Import Equipment Registration</span>
                                         </button>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
@@ -133,36 +252,56 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-md-6">
-                                            <h6>Required Fields:</h6>
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check text-success me-2"></i>OATH Tag (unique identifier)</li>
-                                                <li><i class="fas fa-check text-success me-2"></i>Asset Tag</li>
-                                                <li><i class="fas fa-check text-success me-2"></i>Serial Number</li>
-                                                <li><i class="fas fa-check text-success me-2"></i>Model</li>
-                                                <li><i class="fas fa-check text-success me-2"></i>Manufacturer</li>
+                                        <div class="col-md-3">
+                                            <h6><i class="fas fa-clipboard-list text-info me-2"></i>Phase 1: Registration</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-check text-success me-1"></i>OATH Tag* (unique)</li>
+                                                <li><i class="fas fa-check text-success me-1"></i>Unique ID* (Serial/Service Tag/IMEI)</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Model, Manufacturer</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Category, Location</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Purchase data</li>
                                             </ul>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6>Optional Fields:</h6>
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-info text-info me-2"></i>Category (will be created if not exists)</li>
-                                                <li><i class="fas fa-info text-info me-2"></i>Status (will be created if not exists)</li>
-                                                <li><i class="fas fa-info text-info me-2"></i>Location, Floor, Desk (hierarchy will be created)</li>
-                                                <li><i class="fas fa-info text-info me-2"></i>Assigned To (Entra ID email)</li>
-                                                <li><i class="fas fa-info text-info me-2"></i>Purchase dates and costs</li>
+                                        <div class="col-md-3">
+                                            <h6><i class="fas fa-cogs" style="color: #6f42c1;" me-2></i>Phase 2: Configuration</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-check text-success me-1"></i>OATH Tag* (lookup)</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Network settings</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>IP, MAC, Wall Port</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Switch Name, Switch Port</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Phone, Extension, Desk</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6><i class="fas fa-users text-warning me-2"></i>Phase 3: People</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-check text-success me-1"></i>ObjectId* (Entra)</li>
+                                                <li><i class="fas fa-check text-success me-1"></i>Display Name*</li>
+                                                <li><i class="fas fa-check text-success me-1"></i>User Principal Name*</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Department, Job Title</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Office Location</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6><i class="fas fa-clipboard-check text-success me-2"></i>Complete Inventory</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-check text-success me-1"></i>All Phase 1 fields</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Configuration data</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>User assignments</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Status tracking</li>
+                                                <li><i class="fas fa-info text-info me-1"></i>Complete lifecycle</li>
                                             </ul>
                                         </div>
                                     </div>
 
                                     <div class="alert alert-info mt-3">
-                                        <h6><i class="fas fa-lightbulb me-2"></i>Tips:</h6>
+                                        <h6><i class="fas fa-lightbulb me-2"></i>Workflow Tips:</h6>
                                         <ul class="mb-0">
-                                            <li>Use the template to ensure correct formatting</li>
-                                            <li>OATH Tag must be unique - existing records will be updated</li>
-                                            <li>Categories and Statuses will be automatically created if they don't exist</li>
-                                            <li>Location hierarchy (Building → Floor → Desk) will be created automatically</li>
-                                            <li>Assigned users must exist in Entra ID (use email address)</li>
+                                            <li><strong>Phase 1:</strong> Procurement imports basic equipment data with "Registered" status</li>
+                                            <li><strong>Phase 2:</strong> Coordinators configure technical settings and update to "Configured" status</li>
+                                            <li><strong>Phase 3:</strong> Import or sync Entra users for equipment assignment</li>
+                                            <li><strong>Assignment:</strong> Use Equipment module to assign configured equipment to users</li>
+                                            <li><strong>Audit Trail:</strong> All status changes and assignments are automatically logged</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -234,6 +373,42 @@
                     this.value = '';
                 }
             }
+        });
+
+        // Update form based on import type
+        function updateFormForImportType() {
+            const importType = document.getElementById('importType').value;
+            const locationSection = document.getElementById('locationSection');
+            const locationSelect = document.getElementById('locationId');
+            const buttonText = document.getElementById('importButtonText');
+            
+            switch(importType) {
+                case 'equipment':
+                    locationSection.style.display = 'block';
+                    locationSelect.setAttribute('required', 'required');
+                    buttonText.textContent = 'Import Equipment Registration';
+                    break;
+                case 'configuration':
+                    locationSection.style.display = 'none';
+                    locationSelect.removeAttribute('required');
+                    buttonText.textContent = 'Import Configuration Data';
+                    break;
+                case 'people':
+                    locationSection.style.display = 'none';
+                    locationSelect.removeAttribute('required');
+                    buttonText.textContent = 'Import People Data';
+                    break;
+                case 'inventory':
+                    locationSection.style.display = 'block';
+                    locationSelect.setAttribute('required', 'required');
+                    buttonText.textContent = 'Import Complete Inventory';
+                    break;
+            }
+        }
+
+        // Initialize form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFormForImportType();
         });
 
         // Duplicate review functionality

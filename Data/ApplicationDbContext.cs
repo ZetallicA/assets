@@ -19,6 +19,7 @@ namespace AssetManagement.Data
         public DbSet<Person> People { get; set; }
         public DbSet<EntraUser> EntraUsers { get; set; }
         public DbSet<AssetAuditLog> AssetAuditLogs { get; set; }
+        public DbSet<TechnologyConfiguration> TechnologyConfigurations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

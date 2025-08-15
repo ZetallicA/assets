@@ -222,6 +222,9 @@ namespace AssetManagement.Models
 
         public virtual ICollection<AssetAuditLog> AuditLogs { get; set; } = new List<AssetAuditLog>();
 
+        // Technology Configuration
+        public virtual TechnologyConfiguration? TechnologyConfiguration { get; set; }
+
         // NotMapped properties for simplified access
         [NotMapped]
         public string? Building => CurrentLocation?.Name;
@@ -231,6 +234,10 @@ namespace AssetManagement.Models
 
         [NotMapped]
         public string? Room => CurrentDesk?.DeskNumber;
+
+        // Temporary property for import processing
+        // [NotMapped]
+        // public Dictionary<string, string?>? TempTechConfigData { get; set; }
 
         [NotMapped]
         public string? StatusName => CurrentStatus?.Name ?? "Unknown";

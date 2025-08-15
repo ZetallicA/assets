@@ -1,0 +1,961 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using AssetManagement.Data;
+using AssetManagement.Models;
+using OfficeOpenXml;
+using System.ComponentModel.DataAnnotations;
+
+namespace AssetManagement.Controllers
+{
+    public class ImportController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public ImportController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+        {
+            _context = context;
+            _webHostEnvironment = webHostEnvironment;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            // Get all active locations for the dropdown
+            var locations = await _context.Locations
+                .Where(l => l.IsActive)
+                .OrderBy(l => l.Name)
+                .ToListAsync();
+            
+            ViewBag.Locations = locations;
+            return View();
+        }
+
+        public IActionResult DownloadExcelTemplate()
+        {
+            try
+            {
+                using var package = new ExcelPackage();
+                var worksheet = package.Workbook.Worksheets.Add("Equipment Template");
+
+                // Headers - only OATH Tag and Serial Number are required
+                var headers = new[]
+                {
+                    "OATH Tag*", "Serial Number*", "Service Tag", "Model", "Manufacturer", "Category", "Status",
+                    "Purchase Date", "Warranty Expiration", "Purchase Cost", "Location",
+                    "Floor", "Desk", "Assigned To", "Notes", "Last Maintenance Date"
+                };
+
+                // Add headers
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    worksheet.Cells[1, i + 1].Value = headers[i];
+                    worksheet.Cells[1, i + 1].Style.Font.Bold = true;
+                    worksheet.Cells[1, i + 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                }
+
+                // Add sample data row - only OATH Tag and Serial Number are required
+                worksheet.Cells[2, 1].Value = "OATH-001";
+                worksheet.Cells[2, 2].Value = "Dell123456789"; // Serial Number
+                worksheet.Cells[2, 3].Value = "ABC1234"; // Service Tag (for Dell warranty lookup)
+                worksheet.Cells[2, 4].Value = "Latitude 5520";
+                worksheet.Cells[2, 5].Value = "Dell";
+                worksheet.Cells[2, 6].Value = "Laptop";
+                worksheet.Cells[2, 7].Value = "In Use";
+                worksheet.Cells[2, 8].Value = "2024-01-15";
+                worksheet.Cells[2, 9].Value = "2027-01-15";
+                worksheet.Cells[2, 10].Value = "1500.00";
+                worksheet.Cells[2, 11].Value = "Brooklyn";
+                worksheet.Cells[2, 12].Value = "6th Floor";
+                worksheet.Cells[2, 13].Value = "A1";
+                worksheet.Cells[2, 14].Value = "john.doe@oath.nyc.gov";
+                worksheet.Cells[2, 15].Value = "Standard issue laptop";
+                worksheet.Cells[2, 16].Value = "2024-06-15";
+
+                // Add instructions row
+                worksheet.Cells[3, 1].Value = "Instructions:";
+                worksheet.Cells[3, 1].Style.Font.Bold = true;
+                worksheet.Cells[3, 2].Value = "Only OATH Tag and Serial Number are required. All other fields are optional.";
+                worksheet.Cells[3, 2].Style.Font.Italic = true;
+
+                // Auto-fit columns
+                worksheet.Cells.AutoFitColumns();
+
+                var content = package.GetAsByteArray();
+                var fileName = $"Equipment_Import_Template_{DateTime.Now:yyyyMMdd}.xlsx";
+
+                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Error generating Excel template: {ex.Message}");
+                return BadRequest($"Error generating template: {ex.Message}");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ImportExcel(IFormFile file, int locationId)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["Error"] = "Please select a file to import.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Validate the selected location
+            var selectedLocation = await _context.Locations
+                .FirstOrDefaultAsync(l => l.Id == locationId && l.IsActive);
+            
+            if (selectedLocation == null)
+            {
+                TempData["Error"] = "Please select a valid location for the import.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!file.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Please upload an Excel (.xlsx) file.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                using var stream = file.OpenReadStream();
+                using var package = new ExcelPackage(stream);
+                var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+
+                if (worksheet == null)
+                {
+                    TempData["Error"] = "No worksheet found in the Excel file.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var rowCount = worksheet.Dimension?.Rows ?? 0;
+                if (rowCount < 2)
+                {
+                    TempData["Error"] = "No data found in the Excel file.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var importedCount = 0;
+                var updatedCount = 0;
+                var errors = new List<string>();
+                var allDuplicateRecords = new List<DuplicateRecord>(); // Collect all duplicates across batches
+
+                // Process in batches to avoid database timeouts
+                const int batchSize = 50;
+                var totalRows = rowCount - 1; // Exclude header row
+                var processedRows = 0;
+
+                for (int batchStart = 2; batchStart <= rowCount; batchStart += batchSize)
+                {
+                    var batchEnd = Math.Min(batchStart + batchSize - 1, rowCount);
+                    
+                    // Collect all data for this batch
+                    var categoriesToCreate = new Dictionary<string, AssetCategory>();
+                    var statusesToCreate = new Dictionary<string, AssetStatus>();
+                    var locationsToCreate = new Dictionary<string, Location>();
+                    var floorPlansToCreate = new Dictionary<string, FloorPlan>();
+                    var desksToCreate = new Dictionary<string, Desk>();
+                    var equipmentToUpdate = new List<(Equipment equipment, string? categoryName, string? statusName)>();
+                    var locationAssignments = new List<(Equipment equipment, string? locationName, string? floorName, string? deskName)>();
+                    var processedEquipment = new Dictionary<string, Equipment>(); // Track equipment already processed in this batch
+                    var duplicateRecords = new List<DuplicateRecord>(); // Track duplicates for review
+
+                    // Process this batch
+                    for (int row = batchStart; row <= batchEnd; row++)
+                    {
+                        try
+                        {
+                            var oathTag = worksheet.Cells[row, 1].Value?.ToString()?.Trim();
+                            var serialNumber = worksheet.Cells[row, 2].Value?.ToString()?.Trim();
+                            
+                            // Skip rows that don't have valid OATH Tag and Serial Number (like instruction rows)
+                            if (string.IsNullOrEmpty(oathTag) || string.IsNullOrEmpty(serialNumber))
+                            {
+                                // Skip this row silently - it's likely an instruction row or empty row
+                                continue;
+                            }
+
+                            Equipment equipment;
+                            
+                            // Check if we've already processed this OATH Tag in this batch
+                            if (processedEquipment.ContainsKey(oathTag))
+                            {
+                                equipment = processedEquipment[oathTag];
+                                // Capture original row data for complete Excel regeneration
+                                var originalRowData = new Dictionary<string, object?>();
+                                for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+                                {
+                                    var headerValue = worksheet.Cells[1, col].Value?.ToString() ?? $"Column{col}";
+                                    var cellValue = worksheet.Cells[row, col].Value;
+                                    originalRowData[headerValue] = cellValue;
+                                }
+                                Console.WriteLine($"Captured original row data for row {row}: {originalRowData.Count} columns");
+                                
+                                duplicateRecords.Add(new DuplicateRecord 
+                                { 
+                                    RowNumber = row, 
+                                    OathTag = oathTag, 
+                                    SerialNumber = serialNumber, 
+                                    Reason = "Duplicate OATH Tag in Excel file",
+                                    OriginalRowData = originalRowData
+                                });
+                                Console.WriteLine($"Warning: Duplicate OATH Tag '{oathTag}' found in Excel file at row {row}. Flagged for review.");
+                                continue; // Skip processing this duplicate row
+                            }
+                            
+                            // Check for duplicate serial numbers in this batch (case-insensitive)
+                            if (!string.IsNullOrEmpty(serialNumber))
+                            {
+                                var existingSerialEquipment = processedEquipment.Values
+                                    .FirstOrDefault(e => !string.IsNullOrEmpty(e.Serial_Number) && 
+                                                   e.Serial_Number.Equals(serialNumber, StringComparison.OrdinalIgnoreCase));
+                                if (existingSerialEquipment != null)
+                                {
+                                    // Capture original row data for complete Excel regeneration
+                                    var originalRowData = new Dictionary<string, object?>();
+                                    for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+                                    {
+                                        var headerValue = worksheet.Cells[1, col].Value?.ToString() ?? $"Column{col}";
+                                        var cellValue = worksheet.Cells[row, col].Value;
+                                        originalRowData[headerValue] = cellValue;
+                                    }
+                                    
+                                    duplicateRecords.Add(new DuplicateRecord 
+                                    { 
+                                        RowNumber = row, 
+                                        OathTag = oathTag, 
+                                        SerialNumber = serialNumber, 
+                                        Reason = "Duplicate Serial Number in Excel file",
+                                        OriginalRowData = originalRowData
+                                    });
+                                    Console.WriteLine($"Warning: Duplicate Serial Number '{serialNumber}' found in Excel file at row {row}. Flagged for review.");
+                                    continue; // Skip processing this duplicate row
+                                }
+                            }
+                            
+                            // Check if equipment exists in database
+                            equipment = await _context.Equipment
+                                .FirstOrDefaultAsync(e => e.OATH_Tag == oathTag);
+
+                            if (equipment == null)
+                            {
+                                // Check for duplicate serial number in database (case-insensitive)
+                                if (!string.IsNullOrEmpty(serialNumber))
+                                {
+                                    var existingSerialInDb = await _context.Equipment
+                                        .FirstOrDefaultAsync(e => e.Serial_Number != null && e.Serial_Number.ToLower() == serialNumber.ToLower());
+                                    
+                                    if (existingSerialInDb != null)
+                                    {
+                                        // Capture original row data for complete Excel regeneration
+                                        var originalRowData = new Dictionary<string, object?>();
+                                        for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+                                        {
+                                            var headerValue = worksheet.Cells[1, col].Value?.ToString() ?? $"Column{col}";
+                                            var cellValue = worksheet.Cells[row, col].Value;
+                                            originalRowData[headerValue] = cellValue;
+                                        }
+                                        
+                                        duplicateRecords.Add(new DuplicateRecord 
+                                        { 
+                                            RowNumber = row, 
+                                            OathTag = oathTag, 
+                                            SerialNumber = serialNumber, 
+                                            Reason = $"Serial Number already exists in database (OATH Tag: {existingSerialInDb.OATH_Tag})",
+                                            OriginalRowData = originalRowData
+                                        });
+                                        Console.WriteLine($"Warning: Serial Number '{serialNumber}' already exists in database for OATH Tag '{existingSerialInDb.OATH_Tag}'. Flagged for review.");
+                                        continue; // Skip processing this duplicate row
+                                    }
+                                }
+                                
+                                equipment = new Equipment
+                                {
+                                    OATH_Tag = oathTag,
+                                    CreatedAt = DateTime.UtcNow
+                                };
+                                _context.Equipment.Add(equipment);
+                                importedCount++;
+                            }
+                            else
+                            {
+                                equipment.UpdatedAt = DateTime.UtcNow;
+                                updatedCount++;
+                            }
+                            
+                            // Track this equipment in our batch
+                            processedEquipment[oathTag] = equipment;
+
+                            // Map Excel columns to Equipment properties
+                            equipment.Serial_Number = serialNumber;
+                            equipment.Asset_Tag = equipment.Serial_Number; // For Dell, Asset Tag = Serial Number
+                            equipment.Service_Tag = worksheet.Cells[row, 3].Value?.ToString()?.Trim(); // Service Tag for Dell warranty lookup
+                            equipment.Model = worksheet.Cells[row, 4].Value?.ToString()?.Trim();
+                            equipment.Manufacturer = worksheet.Cells[row, 5].Value?.ToString()?.Trim();
+
+                            // Handle Category - collect for later assignment
+                            var categoryName = worksheet.Cells[row, 6].Value?.ToString()?.Trim();
+                            if (!string.IsNullOrEmpty(categoryName))
+                            {
+                                var category = await _context.AssetCategories
+                                    .FirstOrDefaultAsync(c => c.Name == categoryName);
+                                if (category == null)
+                                {
+                                    if (!categoriesToCreate.ContainsKey(categoryName))
+                                    {
+                                        category = new AssetCategory
+                                        {
+                                            Name = categoryName,
+                                            CreatedAt = DateTime.UtcNow
+                                        };
+                                        categoriesToCreate[categoryName] = category;
+                                        _context.AssetCategories.Add(category);
+                                    }
+                                    else
+                                    {
+                                        category = categoriesToCreate[categoryName];
+                                    }
+                                }
+                                // Store for later assignment after categories are saved
+                                equipmentToUpdate.Add((equipment, categoryName, null));
+                            }
+
+                            // Handle Status - collect for later assignment
+                            var statusName = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
+                            if (!string.IsNullOrEmpty(statusName))
+                            {
+                                var status = await _context.AssetStatuses
+                                    .FirstOrDefaultAsync(s => s.Name == statusName);
+                                if (status == null)
+                                {
+                                    if (!statusesToCreate.ContainsKey(statusName))
+                                    {
+                                        status = new AssetStatus
+                                        {
+                                            Name = statusName,
+                                            CreatedAt = DateTime.UtcNow
+                                        };
+                                        statusesToCreate[statusName] = status;
+                                        _context.AssetStatuses.Add(status);
+                                    }
+                                    else
+                                    {
+                                        status = statusesToCreate[statusName];
+                                    }
+                                }
+                                // Store for later assignment after statuses are saved
+                                var existingUpdate = equipmentToUpdate.FirstOrDefault(x => x.equipment == equipment);
+                                if (existingUpdate.equipment != null)
+                                {
+                                    equipmentToUpdate.Remove(existingUpdate);
+                                    equipmentToUpdate.Add((equipment, existingUpdate.categoryName, statusName));
+                                }
+                                else
+                                {
+                                    equipmentToUpdate.Add((equipment, null, statusName));
+                                }
+                            }
+
+                            // Handle dates
+                            if (DateTime.TryParse(worksheet.Cells[row, 8].Value?.ToString(), out var purchaseDate))
+                                equipment.Purchase_Date = purchaseDate;
+
+                            if (DateTime.TryParse(worksheet.Cells[row, 9].Value?.ToString(), out var warrantyDate))
+                                equipment.Warranty_Expiry = warrantyDate;
+
+                            if (DateTime.TryParse(worksheet.Cells[row, 16].Value?.ToString(), out var maintenanceDate))
+                                equipment.Last_Maintenance_Date = maintenanceDate;
+
+                            // Handle numeric values
+                            if (decimal.TryParse(worksheet.Cells[row, 10].Value?.ToString(), out var purchaseCost))
+                                equipment.Purchase_Cost = purchaseCost;
+
+                            // Handle Location hierarchy - collect for later processing
+                            var locationName = worksheet.Cells[row, 11].Value?.ToString()?.Trim();
+                            var floorName = worksheet.Cells[row, 12].Value?.ToString()?.Trim();
+                            var deskName = worksheet.Cells[row, 13].Value?.ToString()?.Trim();
+
+                            // Use the selected location instead of creating new ones from Excel
+                            if (!string.IsNullOrEmpty(locationName))
+                            {
+                                // Use the selected location for all equipment
+                                if (!locationsToCreate.ContainsKey(selectedLocation.Name))
+                                {
+                                    locationsToCreate[selectedLocation.Name] = selectedLocation;
+                                }
+                                
+                                // Override the Excel location name with the selected location
+                                locationName = selectedLocation.Name;
+
+                                if (!string.IsNullOrEmpty(floorName))
+                                {
+                                    var floorPlanKey = $"{locationName}_{floorName}";
+                                    if (!floorPlansToCreate.ContainsKey(floorPlanKey))
+                                    {
+                                        var floorPlan = new FloorPlan
+                                        {
+                                            FloorNumber = floorName,
+                                            FloorName = floorName,
+                                            CreatedAt = DateTime.UtcNow
+                                        };
+                                        floorPlansToCreate[floorPlanKey] = floorPlan;
+                                        // Don't add floor plan to context - will be created in proper order later
+                                    }
+
+                                    if (!string.IsNullOrEmpty(deskName))
+                                    {
+                                        var deskKey = $"{locationName}_{floorName}_{deskName}";
+                                        if (!desksToCreate.ContainsKey(deskKey))
+                                        {
+                                            var desk = new Desk
+                                            {
+                                                DeskNumber = deskName,
+                                                DeskName = deskName,
+                                                CreatedAt = DateTime.UtcNow
+                                            };
+                                            desksToCreate[deskKey] = desk;
+                                            // Don't add desk to context - will be created using raw SQL later
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Store location assignment for later
+                            if (!string.IsNullOrEmpty(locationName))
+                            {
+                                locationAssignments.Add((equipment, locationName, floorName, deskName));
+                            }
+
+                            // Handle assigned user (Entra ID)
+                            var assignedTo = worksheet.Cells[row, 14].Value?.ToString()?.Trim();
+                            if (!string.IsNullOrEmpty(assignedTo))
+                            {
+                                var entraUser = await _context.EntraUsers
+                                    .FirstOrDefaultAsync(e => e.UserPrincipalName == assignedTo);
+                                if (entraUser != null)
+                                {
+                                    equipment.AssignedEntraUserId = entraUser.Id;
+                                    equipment.AssignedEntraObjectId = entraUser.ObjectId;
+                                }
+                            }
+
+                            equipment.Notes = worksheet.Cells[row, 15].Value?.ToString()?.Trim();
+                        }
+                        catch (Exception ex)
+                        {
+                            errors.Add($"Row {row}: {ex.Message}");
+                        }
+                    }
+
+                    // STEP 1: Save categories and statuses first (equipment depends on these)
+                    if (categoriesToCreate.Any() || statusesToCreate.Any())
+                    {
+                        Console.WriteLine($"Saving {categoriesToCreate.Count} categories and {statusesToCreate.Count} statuses...");
+                        await _context.SaveChangesAsync();
+                        _context.ChangeTracker.Clear(); // Clear all tracked entities
+                        Console.WriteLine("Categories and statuses saved successfully.");
+                    }
+
+                    // STEP 2: Assign category and status IDs to equipment
+                    foreach (var update in equipmentToUpdate)
+                    {
+                        if (!string.IsNullOrEmpty(update.categoryName))
+                        {
+                            var category = await _context.AssetCategories
+                                .FirstOrDefaultAsync(c => c.Name == update.categoryName);
+                            if (category != null)
+                            {
+                                update.equipment.AssetCategoryId = category.Id;
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(update.statusName))
+                        {
+                            var status = await _context.AssetStatuses
+                                .FirstOrDefaultAsync(s => s.Name == update.statusName);
+                            if (status != null)
+                            {
+                                update.equipment.CurrentStatusId = status.Id;
+                            }
+                        }
+                    }
+
+                    // STEP 3: Locations are already selected, no need to create new ones
+                    Console.WriteLine($"Using selected location: {selectedLocation.Name}");
+
+                    // STEP 4: Process floor plans - assign LocationId and save
+                    if (floorPlansToCreate.Any())
+                    {
+                        Console.WriteLine("Processing floor plans...");
+                        
+                        // Create new floor plans with proper LocationId assignment
+                        foreach (var kvp in floorPlansToCreate)
+                        {
+                            var floorPlanKey = kvp.Key; // Format: "LocationName_FloorName"
+                            
+                            var keyParts = floorPlanKey.Split('_');
+                            if (keyParts.Length >= 2)
+                            {
+                                var locationName = keyParts[0];
+                                var floorName = keyParts[1];
+                                
+                                var location = await _context.Locations
+                                    .FirstOrDefaultAsync(l => l.Name == locationName);
+                                if (location != null)
+                                {
+                                    // Check if floor plan already exists
+                                    var existingFloorPlan = await _context.FloorPlans
+                                        .FirstOrDefaultAsync(f => f.FloorNumber == floorName && f.LocationId == location.Id);
+                                    
+                                    if (existingFloorPlan == null)
+                                    {
+                                        // Update the existing FloorPlan entity with the LocationId and add to context
+                                        var floorPlan = kvp.Value;
+                                        floorPlan.LocationId = location.Id;
+                                        _context.FloorPlans.Add(floorPlan);
+                                        Console.WriteLine($"Assigned LocationId {location.Id} to floor plan {floorPlan.FloorNumber}");
+                                    }
+                                    else
+                                    {
+                                        // Update the dictionary to use existing floor plan (no need to remove from context since it was never added)
+                                        floorPlansToCreate[floorPlanKey] = existingFloorPlan;
+                                        Console.WriteLine($"Floor plan {floorName} already exists for location {locationName}");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Warning: Location '{locationName}' not found for floor plan {floorName}");
+                                }
+                            }
+                        }
+                        
+                        Console.WriteLine("Saving floor plans...");
+                        await _context.SaveChangesAsync();
+                        _context.ChangeTracker.Clear(); // Clear all tracked entities
+                        Console.WriteLine("Floor plans saved successfully.");
+                    }
+
+                    // STEP 5: Process desks - assign FloorPlanId and save using raw SQL to avoid EF batching issues
+                    if (desksToCreate.Any())
+                    {
+                        Console.WriteLine("Processing desks...");
+                        
+                        // Desks were never added to context, so no need to remove them
+                        _context.ChangeTracker.Clear();
+                        
+                        // Create desks using raw SQL to avoid EF batching issues
+                        foreach (var kvp in desksToCreate)
+                        {
+                            var deskKey = kvp.Key; // Format: "LocationName_FloorName_DeskName"
+                            
+                            var keyParts = deskKey.Split('_');
+                            if (keyParts.Length >= 3)
+                            {
+                                var locationName = keyParts[0];
+                                var floorName = keyParts[1];
+                                var deskName = keyParts[2];
+                                
+                                // Get FloorPlan ID using raw SQL to avoid any EF tracking
+                                var foundFloorPlanId = await _context.Database
+                                    .SqlQueryRaw<int>("SELECT fp.Id as Value FROM FloorPlans fp INNER JOIN Locations l ON fp.LocationId = l.Id WHERE l.Name = {0} AND fp.FloorNumber = {1}", 
+                                                      locationName, floorName)
+                                    .FirstOrDefaultAsync();
+                                
+                                if (foundFloorPlanId > 0)
+                                {
+                                    // Check if desk already exists using raw SQL
+                                    var existingDeskCount = await _context.Database
+                                        .SqlQueryRaw<int>("SELECT COUNT(*) as Value FROM Desks WHERE DeskNumber = {0} AND FloorPlanId = {1}", 
+                                                           deskName, foundFloorPlanId)
+                                        .FirstOrDefaultAsync();
+                                    
+                                    if (existingDeskCount == 0)
+                                    {
+                                        // Insert using raw SQL to bypass EF batching
+                                        await _context.Database.ExecuteSqlRawAsync(
+                                            "INSERT INTO Desks (DeskNumber, DeskName, FloorPlanId, CreatedAt, IsActive, XCoordinate, YCoordinate) VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6})",
+                                            deskName, deskName, foundFloorPlanId, DateTime.UtcNow, true, 0, 0);
+                                        
+                                        Console.WriteLine($"Created new desk {deskName} with FloorPlanId {foundFloorPlanId}");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Desk {deskName} already exists for floor plan {floorName}");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Warning: Floor plan '{floorName}' not found for location '{locationName}' and desk {deskName}");
+                                }
+                            }
+                        }
+                        
+                        // Clear the desks dictionary since we're not tracking them anymore
+                        desksToCreate.Clear();
+                        
+                        _context.ChangeTracker.Clear(); // Clear all tracked entities
+                        Console.WriteLine("Desks processed successfully using raw SQL.");
+                    }
+
+                    // STEP 6: Assign location IDs to equipment after all entities are saved
+                    foreach (var assignment in locationAssignments)
+                    {
+                        // Always assign to the selected location, not the Excel location
+                        assignment.equipment.CurrentLocationId = selectedLocation.Id;
+                        
+                        if (!string.IsNullOrEmpty(assignment.locationName))
+                        {
+                            // Use selected location instead of looking up by name
+                            var location = selectedLocation;
+
+                                if (!string.IsNullOrEmpty(assignment.floorName))
+                                {
+                                    var floorPlan = await _context.FloorPlans
+                                        .FirstOrDefaultAsync(f => f.LocationId == location.Id && f.FloorNumber == assignment.floorName);
+                                    if (floorPlan != null)
+                                    {
+                                        assignment.equipment.CurrentFloorPlanId = floorPlan.Id;
+
+                                        if (!string.IsNullOrEmpty(assignment.deskName))
+                                        {
+                                            var desk = await _context.Desks
+                                                .FirstOrDefaultAsync(d => d.FloorPlanId == floorPlan.Id && d.DeskNumber == assignment.deskName);
+                                            if (desk != null)
+                                            {
+                                                assignment.equipment.CurrentDeskId = desk.Id;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // STEP 7: Finally save equipment (depends on all the above)
+                    Console.WriteLine($"Saving equipment batch (rows {batchStart}-{batchEnd})...");
+                    await _context.SaveChangesAsync();
+                    _context.ChangeTracker.Clear(); // Clear all tracked entities
+                    Console.WriteLine("Equipment batch saved successfully.");
+
+                    // Collect duplicates from this batch
+                    allDuplicateRecords.AddRange(duplicateRecords);
+                    
+                    // Update progress
+                    processedRows += (batchEnd - batchStart + 1);
+                }
+
+                var message = $"Import completed successfully for location '{selectedLocation.Name}'. {importedCount} new records imported, {updatedCount} records updated.";
+                if (errors.Any())
+                {
+                    message += $" {errors.Count} errors occurred.";
+                    TempData["ImportErrors"] = string.Join("; ", errors.Take(10)); // Show first 10 errors
+                }
+                
+                // Handle duplicate records
+                if (allDuplicateRecords.Any())
+                {
+                    message += $" {allDuplicateRecords.Count} duplicate records were flagged for review.";
+                    
+                    // Generate Excel file with duplicate records
+                    var duplicateExcelPath = await GenerateDuplicateRecordsExcel(file, allDuplicateRecords);
+                    TempData["DuplicateRecordsFile"] = duplicateExcelPath;
+                    TempData["DuplicateCount"] = allDuplicateRecords.Count;
+                    
+                    // Store duplicate records in session for review
+                    var duplicateRecordsJson = System.Text.Json.JsonSerializer.Serialize(allDuplicateRecords);
+                    HttpContext.Session.SetString("DuplicateRecords", duplicateRecordsJson);
+                    Console.WriteLine($"Stored {allDuplicateRecords.Count} duplicate records in session");
+                }
+
+                TempData["Success"] = message;
+            }
+            catch (Exception ex)
+            {
+                // Log the full exception details for debugging
+                Console.WriteLine($"Import failed with exception: {ex}");
+                Console.WriteLine($"Inner exception: {ex.InnerException}");
+                
+                // Provide more detailed error information
+                var errorMessage = $"Import failed: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" Inner exception: {ex.InnerException.Message}";
+                }
+                
+                TempData["Error"] = errorMessage;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public IActionResult DownloadDuplicateRecords()
+        {
+            var filePath = TempData["DuplicateRecordsFile"]?.ToString();
+            if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+            {
+                TempData["Error"] = "Duplicate records file not found or has expired.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var fileName = Path.GetFileName(filePath);
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            
+            // Clean up temp file
+            try
+            {
+                System.IO.File.Delete(filePath);
+            }
+            catch { /* Ignore cleanup errors */ }
+
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
+        [HttpGet]
+        public IActionResult GetDuplicateRecords()
+        {
+            try
+            {
+                var duplicateRecordsJson = HttpContext.Session.GetString("DuplicateRecords");
+                Console.WriteLine($"Retrieved session data: {duplicateRecordsJson?.Substring(0, Math.Min(100, duplicateRecordsJson?.Length ?? 0))}...");
+                
+                if (string.IsNullOrEmpty(duplicateRecordsJson))
+                {
+                    Console.WriteLine("No duplicate records found in session");
+                    return Json(new List<object>());
+                }
+
+                // Deserialize the DuplicateRecord objects
+                var duplicateRecords = System.Text.Json.JsonSerializer.Deserialize<List<DuplicateRecord>>(duplicateRecordsJson);
+                
+                var result = duplicateRecords?.Select(d => new
+                {
+                    rowNumber = d.RowNumber,
+                    oathTag = d.OathTag,
+                    serialNumber = d.SerialNumber,
+                    reason = d.Reason,
+                    originalRowData = d.OriginalRowData
+                }).Cast<object>().ToList() ?? new List<object>();
+
+                Console.WriteLine($"Returning {result.Count} duplicate records");
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving duplicate records: {ex.Message}");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GenerateCorrectedExcel([FromBody] List<DuplicateRecord> correctedRecords)
+        {
+            try
+            {
+                Console.WriteLine($"Received {correctedRecords?.Count ?? 0} corrected records");
+                if (correctedRecords != null)
+                {
+                    foreach (var record in correctedRecords)
+                    {
+                        Console.WriteLine($"Record: Row={record.RowNumber}, OATH='{record.OathTag}', Serial='{record.SerialNumber}', OriginalData Keys={record.OriginalRowData?.Keys.Count ?? 0}");
+                    }
+                }
+                using var package = new ExcelPackage();
+                var worksheet = package.Workbook.Worksheets.Add("Equipment Import");
+
+                if (correctedRecords.Count == 0)
+                {
+                    return BadRequest("No corrected records provided.");
+                }
+
+                // Get headers from the first record's original data, or use default headers if none
+                var firstRecord = correctedRecords.First();
+                var headers = firstRecord.OriginalRowData?.Keys.ToArray();
+                
+                if (headers == null || headers.Length == 0)
+                {
+                    Console.WriteLine("No original row data found, using default headers");
+                    headers = new[]
+                    {
+                        "OATH Tag", "Serial Number", "Manufacturer", "Model", "Category", "Status",
+                        "Purchase Date", "Warranty End Date", "Purchase Cost", "Notes",
+                        "Location", "Floor Plan", "Desk", "Assigned To"
+                    };
+                }
+                else
+                {
+                    Console.WriteLine($"Using original headers: {string.Join(", ", headers)}");
+                
+                // Debug: Show which headers we'll match for OATH Tag and Serial Number
+                foreach (var header in headers)
+                {
+                    if (header.Contains("OATH", StringComparison.OrdinalIgnoreCase))
+                        Console.WriteLine($"Found OATH header: '{header}'");
+                    if (header.Contains("Serial", StringComparison.OrdinalIgnoreCase))
+                        Console.WriteLine($"Found Serial header: '{header}'");
+                }
+                }
+                
+                // Add headers
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    worksheet.Cells[1, i + 1].Value = headers[i];
+                    worksheet.Cells[1, i + 1].Style.Font.Bold = true;
+                    worksheet.Cells[1, i + 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                }
+
+                // Add corrected records with all their original data
+                int currentRow = 2;
+                foreach (var record in correctedRecords)
+                {
+                    Console.WriteLine($"Processing record {currentRow - 1}: OATH='{record.OathTag}', Serial='{record.SerialNumber}'");
+                    for (int col = 0; col < headers.Length; col++)
+                    {
+                        var header = headers[col];
+                        var originalValue = record.OriginalRowData?.ContainsKey(header) == true ? record.OriginalRowData[header] : "";
+                        
+                        // Override with corrected values for OATH Tag and Serial Number (flexible matching)
+                        if (header.Contains("OATH", StringComparison.OrdinalIgnoreCase) && header.Contains("Tag", StringComparison.OrdinalIgnoreCase))
+                        {
+                            worksheet.Cells[currentRow, col + 1].Value = record.OathTag;
+                            Console.WriteLine($"✅ Setting OATH Tag (header: '{header}') to: '{record.OathTag}' at row {currentRow}, col {col + 1}");
+                        }
+                        else if (header.Contains("Serial", StringComparison.OrdinalIgnoreCase) && header.Contains("Number", StringComparison.OrdinalIgnoreCase))
+                        {
+                            worksheet.Cells[currentRow, col + 1].Value = record.SerialNumber;
+                            Console.WriteLine($"✅ Setting Serial Number (header: '{header}') to: '{record.SerialNumber}' at row {currentRow}, col {col + 1}");
+                        }
+                        else if (header.Equals("Notes", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Append correction info to existing notes
+                            var existingNotes = originalValue?.ToString() ?? "";
+                            var correctionNote = $"[CORRECTED: {record.Reason}]";
+                            worksheet.Cells[currentRow, col + 1].Value = string.IsNullOrEmpty(existingNotes) 
+                                ? correctionNote 
+                                : $"{existingNotes} {correctionNote}";
+                        }
+                        else
+                        {
+                            // Use original value for all other columns (or empty if no original data)
+                            worksheet.Cells[currentRow, col + 1].Value = originalValue ?? "";
+                        }
+                    }
+                    
+                    currentRow++;
+                }
+
+                // Auto-fit columns
+                worksheet.Cells.AutoFitColumns();
+
+                // Add instructions in a separate sheet
+                var instructionSheet = package.Workbook.Worksheets.Add("Instructions");
+                instructionSheet.Cells[1, 1].Value = "CORRECTED DUPLICATE RECORDS - READY FOR RE-IMPORT";
+                instructionSheet.Cells[1, 1].Style.Font.Bold = true;
+                instructionSheet.Cells[1, 1].Style.Font.Size = 16;
+                instructionSheet.Cells[1, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                instructionSheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                
+                instructionSheet.Cells[3, 1].Value = "✅ This file contains your corrected duplicate records with ALL original data preserved.";
+                instructionSheet.Cells[4, 1].Value = "✅ OATH Tag and Serial Number columns have been updated with your corrections.";
+                instructionSheet.Cells[5, 1].Value = "✅ All other original data (Manufacturer, Model, Category, etc.) has been preserved.";
+                instructionSheet.Cells[6, 1].Value = "✅ Notes column shows what was corrected for your reference.";
+                instructionSheet.Cells[8, 1].Value = "🔄 You can now re-import this file directly using the normal import process.";
+                instructionSheet.Cells[9, 1].Value = "📍 Remember to select the correct target location during import.";
+                
+                instructionSheet.Cells.AutoFitColumns();
+
+                var fileName = $"Corrected_Equipment_Import_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var fileBytes = package.GetAsByteArray();
+
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating corrected Excel file: {ex.Message}");
+                return BadRequest($"Error generating corrected Excel file: {ex.Message}");
+            }
+        }
+
+        public class DuplicateRecord
+        {
+            public int RowNumber { get; set; }
+            public string OathTag { get; set; } = string.Empty;
+            public string SerialNumber { get; set; } = string.Empty;
+            public string Reason { get; set; } = string.Empty;
+            
+            // Store original row data for regenerating complete Excel
+            public Dictionary<string, object?> OriginalRowData { get; set; } = new Dictionary<string, object?>();
+        }
+
+        private async Task<string> GenerateDuplicateRecordsExcel(IFormFile originalFile, List<DuplicateRecord> duplicateRecords)
+        {
+            try
+            {
+                using var stream = new MemoryStream();
+                await originalFile.CopyToAsync(stream);
+                
+                using var package = new ExcelPackage(stream);
+                var originalWorksheet = package.Workbook.Worksheets[0];
+                
+                // Create a new worksheet for duplicate records
+                var duplicateWorksheet = package.Workbook.Worksheets.Add("Duplicate Records");
+                
+                // Copy header row
+                for (int col = 1; col <= originalWorksheet.Dimension.End.Column; col++)
+                {
+                    duplicateWorksheet.Cells[1, col].Value = originalWorksheet.Cells[1, col].Value;
+                }
+                
+                // Add additional columns for duplicate information
+                var lastCol = originalWorksheet.Dimension.End.Column;
+                duplicateWorksheet.Cells[1, lastCol + 1].Value = "Duplicate Reason";
+                duplicateWorksheet.Cells[1, lastCol + 2].Value = "Original Row Number";
+                
+                // Copy duplicate rows
+                int duplicateRowIndex = 2;
+                foreach (var duplicate in duplicateRecords)
+                {
+                    // Copy original row data
+                    for (int col = 1; col <= originalWorksheet.Dimension.End.Column; col++)
+                    {
+                        duplicateWorksheet.Cells[duplicateRowIndex, col].Value = originalWorksheet.Cells[duplicate.RowNumber, col].Value;
+                    }
+                    
+                    // Add duplicate information
+                    duplicateWorksheet.Cells[duplicateRowIndex, lastCol + 1].Value = duplicate.Reason;
+                    duplicateWorksheet.Cells[duplicateRowIndex, lastCol + 2].Value = duplicate.RowNumber;
+                    
+                    duplicateRowIndex++;
+                }
+                
+                // Style the header row
+                using (var range = duplicateWorksheet.Cells[1, 1, 1, lastCol + 2])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                }
+                
+                // Auto-fit columns
+                duplicateWorksheet.Cells.AutoFitColumns();
+                
+                // Save to temp file
+                var fileName = $"Duplicate_Records_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var filePath = Path.Combine(Path.GetTempPath(), fileName);
+                
+                await System.IO.File.WriteAllBytesAsync(filePath, package.GetAsByteArray());
+                
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating duplicate records Excel: {ex.Message}");
+                return string.Empty;
+            }
+        }
+    }
+}

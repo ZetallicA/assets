@@ -34,6 +34,39 @@ if not exist ".git" (
     )
 )
 
+REM Configure Git user if not already set
+echo Checking Git user configuration...
+
+REM Check if user.name is set and not empty
+git config user.name > temp_git_name.txt 2>&1
+set /p current_git_name=<temp_git_name.txt
+del temp_git_name.txt
+
+if "%current_git_name%"=="" (
+    echo Git user name not configured.
+    set /p git_username="Enter your Git username (or press Enter for 'ZetallicA'): "
+    if "%git_username%"=="" set git_username=ZetallicA
+    git config user.name "%git_username%"
+    echo Git user name set to: %git_username%
+) else (
+    echo Git user name already configured: %current_git_name%
+)
+
+REM Check if user.email is set and not empty
+git config user.email > temp_git_email.txt 2>&1
+set /p current_git_email=<temp_git_email.txt
+del temp_git_email.txt
+
+if "%current_git_email%"=="" (
+    echo Git user email not configured.
+    set /p git_email="Enter your Git email (or press Enter for 'zetallica@example.com'): "
+    if "%git_email%"=="" set git_email=zetallica@example.com
+    git config user.email "%git_email%"
+    echo Git user email set to: %git_email%
+) else (
+    echo Git user email already configured: %current_git_email%
+)
+
 REM Create .gitignore if it doesn't exist
 if not exist ".gitignore" (
     echo Creating .gitignore...

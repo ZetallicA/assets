@@ -74,24 +74,124 @@
                         <thead class="table-light">
                             <tr>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
                                         OATH Tag
                                         @if (ViewData["CurrentSort"]?.ToString() == "oath_tag_desc")
                                         {
-                                            <i class="bi bi-sort-alpha-down"></i>
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
                                         }
                                         else
                                         {
-                                            <i class="bi bi-sort-alpha-up"></i>
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
                                         }
                                     </a>
                                 </th>
-                                <th>Net Name</th>
-                                <th>Model</th>
-                                <th>Status</th>
-                                <th>Location</th>
-                                <th>Assigned To</th>
-                                <th>Category</th>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["NetNameSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
+                                        Net Name
+                                        @if (ViewData["CurrentSort"]?.ToString() == "netname_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "netname")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        }
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["ModelSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
+                                        Model
+                                        @if (ViewData["CurrentSort"]?.ToString() == "model_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "model")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        }
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["StatusSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
+                                        Status
+                                        @if (ViewData["CurrentSort"]?.ToString() == "status_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "status")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        }
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
+                                        Location
+                                        @if (ViewData["CurrentSort"]?.ToString() == "location_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "location")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        }
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["AssignedToSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
+                                        Assigned To
+                                        @if (ViewData["CurrentSort"]?.ToString() == "assigned_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "assigned")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        }
+                                    </a>
+                                </th>
+                                <th>
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
+                                        Category
+                                        @if (ViewData["CurrentSort"]?.ToString() == "category_desc")
+                                        {
+                                            <i class="bi bi-sort-alpha-down ms-1"></i>
+                                        }
+                                        else if (ViewData["CurrentSort"]?.ToString() == "category")
+                                        {
+                                            <i class="bi bi-sort-alpha-up ms-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        }
+                                    </a>
+                                </th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -156,7 +256,7 @@
                                             }
                                             @if (item.CurrentDesk != null)
                                             {
-                                                <br><small class="text-muted">Desk @item.CurrentDesk.DeskNumber</small>
+                                                <br><small class="text-muted">@item.CurrentDesk.DeskNumber</small>
                                             }
                                         }
                                         else

@@ -47,7 +47,10 @@
                                 <dd class="col-sm-8"><strong>@Model.OATH_Tag</strong></dd>
 
                                 <dt class="col-sm-4">Serial Number</dt>
-                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Serial_Number) ? "-" : Model.Serial_Number)</dd>
+                                <dd class="col-sm-8 editable-field" data-field="Serial_Number" data-value="@Model.Serial_Number" title="Double-click to edit">
+                                    @(string.IsNullOrEmpty(Model.Serial_Number) ? "-" : Model.Serial_Number)
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
+                                </dd>
 
                                 <dt class="col-sm-4">Category</dt>
                                 <dd class="col-sm-8">
@@ -80,13 +83,19 @@
                                 </dd>
 
                                 <dt class="col-sm-4">Manufacturer</dt>
-                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Manufacturer) ? "-" : Model.Manufacturer)</dd>
+                                <dd class="col-sm-8 editable-field" data-field="Manufacturer" data-value="@Model.Manufacturer" title="Double-click to edit">
+                                    @(string.IsNullOrEmpty(Model.Manufacturer) ? "-" : Model.Manufacturer)
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
+                                </dd>
 
                                 <dt class="col-sm-4">Model</dt>
-                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Model) ? "-" : Model.Model)</dd>
+                                <dd class="col-sm-8 editable-field" data-field="Model" data-value="@Model.Model" title="Double-click to edit">
+                                    @(string.IsNullOrEmpty(Model.Model) ? "-" : Model.Model)
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
+                                </dd>
 
                                 <dt class="col-sm-4">Computer Name</dt>
-                                <dd class="col-sm-8">
+                                <dd class="col-sm-8 editable-field" data-field="Computer_Name" data-value="@Model.Computer_Name" title="Double-click to edit">
                                     @if (!string.IsNullOrEmpty(Model.Computer_Name))
                                     {
                                         <span class="badge bg-secondary">@Model.Computer_Name</span>
@@ -95,6 +104,7 @@
                                     {
                                         <span class="text-muted">-</span>
                                     }
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
                                 </dd>
                             </dl>
                         </div>
@@ -119,13 +129,22 @@
                                 </dd>
 
                                 <dt class="col-sm-4">OS Version</dt>
-                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.OS_Version) ? "-" : Model.OS_Version)</dd>
+                                <dd class="col-sm-8 editable-field" data-field="OS_Version" data-value="@Model.OS_Version" title="Double-click to edit">
+                                    @(string.IsNullOrEmpty(Model.OS_Version) ? "-" : Model.OS_Version)
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
+                                </dd>
 
                                 <dt class="col-sm-4">IP Address</dt>
-                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.IP_Address) ? "-" : Model.IP_Address)</dd>
+                                <dd class="col-sm-8 editable-field" data-field="IP_Address" data-value="@Model.IP_Address" title="Double-click to edit">
+                                    @(string.IsNullOrEmpty(Model.IP_Address) ? "-" : Model.IP_Address)
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
+                                </dd>
 
                                 <dt class="col-sm-4">Department</dt>
-                                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Department) ? "-" : Model.Department)</dd>
+                                <dd class="col-sm-8 editable-field" data-field="Department" data-value="@Model.Department" title="Double-click to edit">
+                                    @(string.IsNullOrEmpty(Model.Department) ? "-" : Model.Department)
+                                    <i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>
+                                </dd>
                             </dl>
                         </div>
                     </div>
@@ -381,4 +400,178 @@
     margin-bottom: 5px;
     color: #6c757d;
 }
+
+/* Inline editing styles */
+.editable-field {
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.editable-field:hover {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.editable-field:hover .edit-icon {
+    display: inline !important;
+}
+
+.editing {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.save-buttons {
+    margin-top: 5px;
+}
+
+.save-buttons .btn {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+}
 </style>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editableFields = document.querySelectorAll('.editable-field');
+    
+    editableFields.forEach(field => {
+        field.addEventListener('dblclick', function() {
+            if (this.querySelector('.editing-input')) return; // Already editing
+            
+            const fieldName = this.getAttribute('data-field');
+            const currentValue = this.getAttribute('data-value') || '';
+            const displayContent = this.innerHTML;
+            
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.className = 'form-control editing-input';
+            input.style.fontSize = 'inherit';
+            
+            // Create save/cancel buttons
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'save-buttons';
+            buttonsDiv.innerHTML = `
+                <button class="btn btn-success btn-sm save-btn me-1">
+                    <i class="fas fa-check"></i> Save
+                </button>
+                <button class="btn btn-secondary btn-sm cancel-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            `;
+            
+            // Replace content with input
+            this.innerHTML = '';
+            this.appendChild(input);
+            this.appendChild(buttonsDiv);
+            this.classList.add('editing');
+            
+            // Focus and select text
+            input.focus();
+            input.select();
+            
+            // Handle save
+            const saveBtn = buttonsDiv.querySelector('.save-btn');
+            const cancelBtn = buttonsDiv.querySelector('.cancel-btn');
+            
+            const saveChanges = () => {
+                const newValue = input.value;
+                
+                // Show loading state
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                saveBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Send AJAX request to update the field
+                fetch(`/Equipment/UpdateField/@Model.Id`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        fieldName: fieldName,
+                        fieldValue: newValue
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the field display
+                        this.setAttribute('data-value', newValue);
+                        this.innerHTML = newValue || '-';
+                        this.innerHTML += '<i class="fas fa-edit edit-icon ms-2 text-muted" style="display: none;"></i>';
+                        this.classList.remove('editing');
+                        
+                        // Show success message
+                        const toast = document.createElement('div');
+                        toast.className = 'toast-message bg-success text-white p-2 rounded position-fixed';
+                        toast.style.top = '20px';
+                        toast.style.right = '20px';
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = '<i class="fas fa-check"></i> Field updated successfully';
+                        document.body.appendChild(toast);
+                        
+                        setTimeout(() => toast.remove(), 3000);
+                    } else {
+                        throw new Error(data.message || 'Failed to update field');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating field:', error);
+                    
+                    // Restore original content
+                    this.innerHTML = displayContent;
+                    this.classList.remove('editing');
+                    
+                    // Show error message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast-message bg-danger text-white p-2 rounded position-fixed';
+                    toast.style.top = '20px';
+                    toast.style.right = '20px';
+                    toast.style.zIndex = '9999';
+                    toast.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to update field';
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => toast.remove(), 3000);
+                });
+            };
+            
+            const cancelChanges = () => {
+                this.innerHTML = displayContent;
+                this.classList.remove('editing');
+            };
+            
+            // Event listeners
+            saveBtn.addEventListener('click', saveChanges);
+            cancelBtn.addEventListener('click', cancelChanges);
+            
+            // Save on Enter, cancel on Escape
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveChanges();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelChanges();
+                }
+            });
+            
+            // Cancel when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!field.contains(e.target)) {
+                    cancelChanges();
+                }
+            }, { once: true });
+        });
+    });
+});
+</script>
+}

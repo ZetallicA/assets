@@ -1,0 +1,286 @@
+@model AssetManagement.Models.TechnologyConfiguration
+
+@{
+    ViewData["Title"] = "Edit Technology Configuration";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-pencil"></i> Edit Technology Configuration</h2>
+                <div>
+                    <a asp-action="Details" asp-route-id="@Model?.Id" class="btn btn-info me-2">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <form asp-action="Edit">
+                                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                                <input type="hidden" asp-for="Id" />
+                                <input type="hidden" asp-for="LastUpdated" />
+
+                                <!-- Equipment Selection -->
+                                <div class="mb-3">
+                                    <label asp-for="EquipmentId" class="form-label">Equipment <span class="text-danger">*</span></label>
+                                    <select asp-for="EquipmentId" class="form-select" asp-items="ViewBag.EquipmentId">
+                                        <option value="">-- Select Equipment --</option>
+                                    </select>
+                                    <span asp-validation-for="EquipmentId" class="text-danger"></span>
+                                </div>
+
+                                <!-- Network Configuration -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-router"></i> Network Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="NetName" class="form-label">Net Name</label>
+                                                    <input asp-for="NetName" class="form-control" placeholder="Computer/Device network name" />
+                                                    <span asp-validation-for="NetName" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="IPv4Address" class="form-label">IPv4 Address</label>
+                                                    <input asp-for="IPv4Address" class="form-control" placeholder="192.168.1.100" />
+                                                    <span asp-validation-for="IPv4Address" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="MACAddress" class="form-label">MAC Address</label>
+                                                    <input asp-for="MACAddress" class="form-control" placeholder="00:11:22:33:44:55" />
+                                                    <span asp-validation-for="MACAddress" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="WallPort" class="form-label">Wall Port</label>
+                                                    <input asp-for="WallPort" class="form-control" placeholder="A1-01" />
+                                                    <span asp-validation-for="WallPort" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="SwitchName" class="form-label">Switch Name</label>
+                                                    <input asp-for="SwitchName" class="form-control" placeholder="SW-Floor1" />
+                                                    <span asp-validation-for="SwitchName" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="SwitchPort" class="form-label">Switch Port</label>
+                                                    <input asp-for="SwitchPort" class="form-control" placeholder="Gi0/1" />
+                                                    <span asp-validation-for="SwitchPort" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Configuration -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-telephone"></i> Phone Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                                    <input asp-for="PhoneNumber" class="form-control" placeholder="(555) 123-4567" />
+                                                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="Extension" class="form-label">Extension</label>
+                                                    <input asp-for="Extension" class="form-control" placeholder="1234" />
+                                                    <span asp-validation-for="Extension" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mobile Configuration -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-phone"></i> Mobile Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="IMEI" class="form-label">IMEI</label>
+                                                    <input asp-for="IMEI" class="form-control" placeholder="123456789012345" />
+                                                    <span asp-validation-for="IMEI" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="SIMCardNumber" class="form-label">SIM Card Number</label>
+                                                    <input asp-for="SIMCardNumber" class="form-control" placeholder="89012345678901234567" />
+                                                    <span asp-validation-for="SIMCardNumber" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="Vendor" class="form-label">Vendor/Carrier</label>
+                                                    <input asp-for="Vendor" class="form-control" placeholder="Verizon, AT&T, etc." />
+                                                    <span asp-validation-for="Vendor" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- License Information -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-key"></i> License Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License1" class="form-label">License 1</label>
+                                                    <input asp-for="License1" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License1" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License2" class="form-label">License 2</label>
+                                                    <input asp-for="License2" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License2" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License3" class="form-label">License 3</label>
+                                                    <input asp-for="License3" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License3" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License4" class="form-label">License 4</label>
+                                                    <input asp-for="License4" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License4" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License5" class="form-label">License 5</label>
+                                                    <input asp-for="License5" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License5" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Notes -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Additional Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label asp-for="ConfigurationNotes" class="form-label">Configuration Notes</label>
+                                            <textarea asp-for="ConfigurationNotes" class="form-control" rows="4" placeholder="Additional configuration details, special settings, etc."></textarea>
+                                            <span asp-validation-for="ConfigurationNotes" class="text-danger"></span>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label asp-for="UpdatedBy" class="form-label">Updated By</label>
+                                            <input asp-for="UpdatedBy" class="form-control" placeholder="Your name or system identifier" />
+                                            <span asp-validation-for="UpdatedBy" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Buttons -->
+                                <div class="d-flex justify-content-between">
+                                    <a asp-action="Index" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Panel -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Configuration Info</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model?.Equipment != null)
+                            {
+                                <h6>Equipment Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>OATH Tag:</strong> @Model.Equipment.OATH_Tag</li>
+                                    <li><strong>Model:</strong> @Model.Equipment.Model</li>
+                                    <li><strong>Serial:</strong> @Model.Equipment.Serial_Number</li>
+                                    @if (!string.IsNullOrEmpty(Model.Equipment.Building))
+                                    {
+                                        <li><strong>Location:</strong> @Model.Equipment.Building</li>
+                                    }
+                                </ul>
+                            }
+
+                            @if (Model?.LastUpdated.HasValue == true)
+                            {
+                                <h6>Last Updated</h6>
+                                <p class="small">
+                                    <strong>Date:</strong> @Model.LastUpdated.Value.ToString("MM/dd/yyyy hh:mm tt")<br>
+                                    <strong>By:</strong> @(Model.UpdatedBy ?? "System")
+                                </p>
+                            }
+
+                            <h6>Quick Tips</h6>
+                            <ul class="small">
+                                <li>Use consistent naming conventions for Net Names</li>
+                                <li>Verify IP addresses don't conflict with existing devices</li>
+                                <li>Document license information for compliance</li>
+                                <li>Keep configuration notes up to date</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -165,6 +165,45 @@ namespace AssetManagement.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> CreateDesk(int floorPlanId, int x, int y, string deskNumber)
+        {
+            // Check if desk number already exists on this floor
+            var existingDesk = await _context.Desks
+                .FirstOrDefaultAsync(d => d.FloorPlanId == floorPlanId && d.DeskNumber == deskNumber);
+
+            if (existingDesk != null)
+            {
+                return Json(new { success = false, message = "Desk number already exists on this floor" });
+            }
+
+            var desk = new Desk
+            {
+                DeskNumber = deskNumber,
+                DeskName = deskNumber,
+                FloorPlanId = floorPlanId,
+                XCoordinate = x,
+                YCoordinate = y,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Desks.Add(desk);
+            await _context.SaveChangesAsync();
+
+            return Json(new { 
+                success = true, 
+                desk = new {
+                    id = desk.Id,
+                    deskNumber = desk.DeskNumber,
+                    deskName = desk.DeskName,
+                    x = desk.XCoordinate,
+                    y = desk.YCoordinate,
+                    equipment = new List<object>()
+                }
+            });
+        }
+
+        [HttpPost]
         public async Task<IActionResult> UnassignEquipmentFromDesk(int equipmentId)
         {
             var equipment = await _context.Equipment.FindAsync(equipmentId);

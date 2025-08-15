@@ -19,9 +19,12 @@ namespace AssetManagement.Controllers
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["OATHTagSortParm"] = String.IsNullOrEmpty(sortOrder) ? "oath_tag_desc" : "";
-            ViewData["NameSortParm"] = sortOrder == "Name" ? "name_desc" : "Name";
-            ViewData["StatusSortParm"] = sortOrder == "Status" ? "status_desc" : "Status";
-            ViewData["LocationSortParm"] = sortOrder == "Location" ? "location_desc" : "Location";
+            ViewData["NetNameSortParm"] = sortOrder == "netname" ? "netname_desc" : "netname";
+            ViewData["ModelSortParm"] = sortOrder == "model" ? "model_desc" : "model";
+            ViewData["StatusSortParm"] = sortOrder == "status" ? "status_desc" : "status";
+            ViewData["LocationSortParm"] = sortOrder == "location" ? "location_desc" : "location";
+            ViewData["AssignedToSortParm"] = sortOrder == "assigned" ? "assigned_desc" : "assigned";
+            ViewData["CategorySortParm"] = sortOrder == "category" ? "category_desc" : "category";
             ViewData["CurrentFilter"] = searchString;
             
             // Page size options
@@ -55,12 +58,18 @@ namespace AssetManagement.Controllers
             equipment = sortOrder switch
             {
                 "oath_tag_desc" => equipment.OrderByDescending(e => e.OATH_Tag),
-                "Name" => equipment.OrderBy(e => e.Computer_Name),
-                "name_desc" => equipment.OrderByDescending(e => e.Computer_Name),
-                "Status" => equipment.OrderBy(e => e.CurrentStatus.Name),
+                "netname" => equipment.OrderBy(e => e.Computer_Name),
+                "netname_desc" => equipment.OrderByDescending(e => e.Computer_Name),
+                "model" => equipment.OrderBy(e => e.Model),
+                "model_desc" => equipment.OrderByDescending(e => e.Model),
+                "status" => equipment.OrderBy(e => e.CurrentStatus.Name),
                 "status_desc" => equipment.OrderByDescending(e => e.CurrentStatus.Name),
-                "Location" => equipment.OrderBy(e => e.CurrentLocation.Name),
+                "location" => equipment.OrderBy(e => e.CurrentLocation.Name),
                 "location_desc" => equipment.OrderByDescending(e => e.CurrentLocation.Name),
+                "assigned" => equipment.OrderBy(e => e.Assigned_User_Name),
+                "assigned_desc" => equipment.OrderByDescending(e => e.Assigned_User_Name),
+                "category" => equipment.OrderBy(e => e.AssetCategory.Name),
+                "category_desc" => equipment.OrderByDescending(e => e.AssetCategory.Name),
                 _ => equipment.OrderBy(e => e.OATH_Tag),
             };
 
@@ -213,19 +222,37 @@ namespace AssetManagement.Controllers
                 return NotFound();
             }
 
-            var equipment = await _context.Equipment.FindAsync(id);
+            var equipment = await _context.Equipment
+                .Include(e => e.AssetCategory)
+                .Include(e => e.CurrentStatus)
+                .Include(e => e.CurrentLocation)
+                .Include(e => e.CurrentFloorPlan)
+                .Include(e => e.CurrentDesk)
+                .Include(e => e.AssignedPerson)
+                .Include(e => e.AssignedEntraUser)
+                .Include(e => e.TechnologyConfiguration)
+                .FirstOrDefaultAsync(e => e.Id == id);
+            
             if (equipment == null)
             {
                 return NotFound();
             }
 
-            ViewData["AssetCategoryId"] = await GetAssetCategorySelectList();
-            ViewData["CurrentStatusId"] = await GetAssetStatusSelectList();
-            ViewData["CurrentLocationId"] = await GetLocationSelectList();
-            ViewData["CurrentFloorPlanId"] = await GetFloorPlanSelectList();
-            ViewData["CurrentDeskId"] = await GetDeskSelectList();
-            ViewData["AssignedPersonId"] = await GetPersonSelectList();
-            ViewData["AssignedEntraUserId"] = await GetEntraUserSelectList();
+            ViewBag.Categories = await GetAssetCategorySelectList();
+            ViewBag.Statuses = await GetAssetStatusSelectList();
+            
+            // Create location SelectList with the current equipment's location pre-selected
+            var locations = await _context.Locations
+                .Where(l => l.IsActive)
+                .OrderBy(l => l.Name)
+                .ToListAsync();
+            ViewBag.Locations = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(locations, "Id", "Name", equipment.CurrentLocationId);
+            
+            // FloorPlans and Desks will be loaded dynamically via JavaScript
+            ViewBag.FloorPlans = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(new List<object>(), "Id", "DisplayText");
+            ViewBag.Desks = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(new List<object>(), "Id", "DisplayText");
+            ViewBag.Persons = await GetPersonSelectList();
+            ViewBag.EntraUsers = await GetEntraUserSelectList();
 
             return View(equipment);
         }
@@ -233,7 +260,7 @@ namespace AssetManagement.Controllers
         // POST: Equipment/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,OATH_Tag,Serial_Number,AssetCategoryId,Manufacturer,Model,Computer_Name,PurchaseOrderNumber,PurchasePrice,CostCentre,PurchaseDate,WarrantyStartDate,WarrantyEndDate,Condition,Barcode,QRCode,Assigned_User_Name,Assigned_User_Email,Assigned_User_ID,AssignedPersonId,AssignedEntraUserId,AssignedEntraObjectId,Phone_Number,ExpectedReturnDate,CurrentStatusId,Department,Facility,OS_Version,IP_Address,CurrentLocationId,CurrentFloorPlanId,CurrentDeskId,Current_Location_Notes,CurrentBookValue,DepreciationRate,LastMaintenanceDate,NextMaintenanceDate,CreatedAt")] Equipment equipment)
+        public async Task<IActionResult> Edit(int id, Equipment equipment)
         {
             if (id != equipment.Id)
             {
@@ -244,6 +271,20 @@ namespace AssetManagement.Controllers
             {
                 try
                 {
+                    // Get the existing equipment with all related data
+                    var existingEquipment = await _context.Equipment
+                        .Include(e => e.TechnologyConfiguration)
+                        .Include(e => e.CurrentStatus)
+                        .Include(e => e.CurrentLocation)
+                        .Include(e => e.AssignedPerson)
+                        .FirstOrDefaultAsync(e => e.Id == id);
+
+                    if (existingEquipment == null)
+                    {
+                        return NotFound();
+                    }
+
+                    // Store original for audit logging
                     var originalEquipment = await _context.Equipment
                         .Include(e => e.CurrentStatus)
                         .Include(e => e.CurrentLocation)
@@ -251,14 +292,69 @@ namespace AssetManagement.Controllers
                         .AsNoTracking()
                         .FirstOrDefaultAsync(e => e.Id == id);
 
-                    equipment.UpdatedAt = DateTime.UtcNow;
-                    equipment.UpdatedBy = User.Identity?.Name ?? "System";
+                    // Update Equipment properties
+                    existingEquipment.Serial_Number = equipment.Serial_Number;
+                    existingEquipment.Manufacturer = equipment.Manufacturer;
+                    existingEquipment.Model = equipment.Model;
+                    existingEquipment.Computer_Name = equipment.Computer_Name;
+                    existingEquipment.IP_Address = equipment.IP_Address;
+                    existingEquipment.Phone_Number = equipment.Phone_Number;
+                    existingEquipment.OS_Version = equipment.OS_Version;
+                    existingEquipment.Service_Tag = equipment.Service_Tag;
+                    existingEquipment.AssetCategoryId = equipment.AssetCategoryId;
+                    existingEquipment.CurrentStatusId = equipment.CurrentStatusId;
+                    existingEquipment.Condition = equipment.Condition;
+                    existingEquipment.Purchase_Date = equipment.Purchase_Date;
+                    existingEquipment.Purchase_Cost = equipment.Purchase_Cost;
+                    existingEquipment.Warranty_Expiry = equipment.Warranty_Expiry;
+                    existingEquipment.CurrentLocationId = equipment.CurrentLocationId;
+                    existingEquipment.CurrentFloorPlanId = equipment.CurrentFloorPlanId;
+                    existingEquipment.CurrentDeskId = equipment.CurrentDeskId;
+                    existingEquipment.AssignedPersonId = equipment.AssignedPersonId;
+                    existingEquipment.AssignedEntraUserId = equipment.AssignedEntraUserId;
+                    existingEquipment.Notes = equipment.Notes;
+                    existingEquipment.UpdatedAt = DateTime.UtcNow;
+                    existingEquipment.UpdatedBy = User.Identity?.Name ?? "System";
 
-                    _context.Update(equipment);
+                    // Handle TechnologyConfiguration
+                    if (equipment.TechnologyConfiguration != null)
+                    {
+                        if (existingEquipment.TechnologyConfiguration == null)
+                        {
+                            // Create new TechnologyConfiguration
+                            existingEquipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = existingEquipment.Id,
+                                MACAddress = equipment.TechnologyConfiguration.MACAddress,
+                                WallPort = equipment.TechnologyConfiguration.WallPort,
+                                SwitchName = equipment.TechnologyConfiguration.SwitchName,
+                                SwitchPort = equipment.TechnologyConfiguration.SwitchPort,
+                                Extension = equipment.TechnologyConfiguration.Extension,
+                                IMEI = equipment.TechnologyConfiguration.IMEI,
+                                SIMCardNumber = equipment.TechnologyConfiguration.SIMCardNumber,
+                                ConfigurationNotes = equipment.TechnologyConfiguration.ConfigurationNotes,
+                                LastUpdated = DateTime.UtcNow
+                            };
+                        }
+                        else
+                        {
+                            // Update existing TechnologyConfiguration
+                            existingEquipment.TechnologyConfiguration.MACAddress = equipment.TechnologyConfiguration.MACAddress;
+                            existingEquipment.TechnologyConfiguration.WallPort = equipment.TechnologyConfiguration.WallPort;
+                            existingEquipment.TechnologyConfiguration.SwitchName = equipment.TechnologyConfiguration.SwitchName;
+                            existingEquipment.TechnologyConfiguration.SwitchPort = equipment.TechnologyConfiguration.SwitchPort;
+                            existingEquipment.TechnologyConfiguration.Extension = equipment.TechnologyConfiguration.Extension;
+                            existingEquipment.TechnologyConfiguration.IMEI = equipment.TechnologyConfiguration.IMEI;
+                            existingEquipment.TechnologyConfiguration.SIMCardNumber = equipment.TechnologyConfiguration.SIMCardNumber;
+                            existingEquipment.TechnologyConfiguration.ConfigurationNotes = equipment.TechnologyConfiguration.ConfigurationNotes;
+                            existingEquipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
 
                     // Log the changes
-                    await LogEquipmentChanges(originalEquipment, equipment);
+                    await LogEquipmentChanges(originalEquipment, existingEquipment);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -420,6 +516,81 @@ namespace AssetManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Equipment/UpdateField/5
+        [HttpPost]
+        public async Task<IActionResult> UpdateField(int id, [FromBody] UpdateFieldRequest request)
+        {
+            try
+            {
+                var equipment = await _context.Equipment.FindAsync(id);
+                if (equipment == null)
+                {
+                    return Json(new { success = false, message = "Equipment not found" });
+                }
+
+                // Use reflection to update the field
+                var property = typeof(Equipment).GetProperty(request.FieldName);
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "Field not found" });
+                }
+
+                // Check if the property is writable
+                if (!property.CanWrite)
+                {
+                    return Json(new { success = false, message = "Field is read-only" });
+                }
+
+                // Convert and set the value
+                object? convertedValue = null;
+                if (!string.IsNullOrEmpty(request.FieldValue))
+                {
+                    if (property.PropertyType == typeof(string))
+                    {
+                        convertedValue = request.FieldValue;
+                    }
+                    else if (property.PropertyType == typeof(int?) || property.PropertyType == typeof(int))
+                    {
+                        if (int.TryParse(request.FieldValue, out int intValue))
+                            convertedValue = intValue;
+                    }
+                    else if (property.PropertyType == typeof(decimal?) || property.PropertyType == typeof(decimal))
+                    {
+                        if (decimal.TryParse(request.FieldValue, out decimal decimalValue))
+                            convertedValue = decimalValue;
+                    }
+                    else if (property.PropertyType == typeof(DateTime?) || property.PropertyType == typeof(DateTime))
+                    {
+                        if (DateTime.TryParse(request.FieldValue, out DateTime dateValue))
+                            convertedValue = dateValue;
+                    }
+                    else
+                    {
+                        convertedValue = request.FieldValue;
+                    }
+                }
+
+                // Set the value
+                property.SetValue(equipment, convertedValue);
+                
+                // Update audit fields
+                equipment.UpdatedAt = DateTime.UtcNow;
+                equipment.UpdatedBy = User.Identity?.Name ?? "System";
+
+                // Save changes
+                await _context.SaveChangesAsync();
+
+                // Log the change
+                await LogEquipmentAction(id, "Field Updated", $"Updated {request.FieldName} to: {request.FieldValue ?? "(empty)"}");
+
+                return Json(new { success = true, message = "Field updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
         private bool EquipmentExists(int id)
         {
             return _context.Equipment.Any(e => e.Id == id);
@@ -457,23 +628,27 @@ namespace AssetManagement.Controllers
             var floorPlans = await _context.FloorPlans
                 .Include(fp => fp.Location)
                 .Where(fp => fp.IsActive)
-                .OrderBy(fp => fp.Location.Name)
+                .OrderBy(fp => fp.Location!.Name)
                 .ThenBy(fp => fp.FloorNumber)
+                .Select(fp => new { 
+                    Id = fp.Id, 
+                    DisplayText = $"{fp.Location!.Name} - Floor {fp.FloorNumber}"
+                })
                 .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(floorPlans, "Id", "FloorNumber", null, "Location.Name");
+            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(floorPlans, "Id", "DisplayText");
         }
 
         private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetDeskSelectList()
         {
             var desks = await _context.Desks
-                .Include(d => d.FloorPlan)
-                .ThenInclude(fp => fp.Location)
                 .Where(d => d.IsActive)
-                .OrderBy(d => d.FloorPlan.Location.Name)
-                .ThenBy(d => d.FloorPlan.FloorNumber)
-                .ThenBy(d => d.DeskNumber)
+                .OrderBy(d => d.DeskNumber)
+                .Select(d => new {
+                    Id = d.Id,
+                    DisplayText = $"{d.DeskNumber}{(d.DeskName != null ? " - " + d.DeskName : "")}"
+                })
                 .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(desks, "Id", "DeskNumber", null, "FloorPlan.Location.Name - FloorPlan.FloorNumber");
+            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(desks, "Id", "DisplayText");
         }
 
         private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetPersonSelectList()
@@ -583,5 +758,11 @@ namespace AssetManagement.Controllers
             var items = await source.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
             return new PaginatedList<T>(items, count, pageIndex, pageSize);
         }
+    }
+
+    public class UpdateFieldRequest
+    {
+        public string FieldName { get; set; } = string.Empty;
+        public string? FieldValue { get; set; }
     }
 }

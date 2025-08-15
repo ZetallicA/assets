@@ -4,305 +4,397 @@
 }
 
 <div class="container-fluid">
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h3 class="card-title">
-                            <i class="fas fa-edit me-2"></i>
-                            Edit Equipment
-                        </h3>
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Back to List
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if (TempData["Success"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>
-                            @TempData["Success"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-
-                    <form asp-action="Edit" method="post">
-                        <input type="hidden" asp-for="Id" />
-                        <input type="hidden" asp-for="CreatedAt" />
-                        
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Basic Information
-                                        </h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="OATH_Tag" class="form-label">OATH Tag</label>
-                                                    <input asp-for="OATH_Tag" class="form-control" readonly />
-                                                    <span asp-validation-for="OATH_Tag" class="text-danger"></span>
-                                                    <div class="form-text">OATH Tag cannot be changed once created.</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Asset_Tag" class="form-label">Asset Tag</label>
-                                                    <input asp-for="Asset_Tag" class="form-control" />
-                                                    <span asp-validation-for="Asset_Tag" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Serial_Number" class="form-label">Serial Number</label>
-                                                    <input asp-for="Serial_Number" class="form-control" />
-                                                    <span asp-validation-for="Serial_Number" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Model" class="form-label">Model</label>
-                                                    <input asp-for="Model" class="form-control" />
-                                                    <span asp-validation-for="Model" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Manufacturer" class="form-label">Manufacturer</label>
-                                                    <input asp-for="Manufacturer" class="form-control" />
-                                                    <span asp-validation-for="Manufacturer" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="CategoryId" class="form-label">Category</label>
-                                                    <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.Categories">
-                                                        <option value="">-- Select Category --</option>
-                                                    </select>
-                                                    <span asp-validation-for="CategoryId" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="StatusId" class="form-label">Status</label>
-                                                    <select asp-for="StatusId" class="form-select" asp-items="ViewBag.Statuses">
-                                                        <option value="">-- Select Status --</option>
-                                                    </select>
-                                                    <span asp-validation-for="StatusId" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Condition" class="form-label">Condition</label>
-                                                    <select asp-for="Condition" class="form-select">
-                                                        <option value="">-- Select Condition --</option>
-                                                        <option value="Excellent">Excellent</option>
-                                                        <option value="Good">Good</option>
-                                                        <option value="Fair">Fair</option>
-                                                        <option value="Poor">Poor</option>
-                                                        <option value="Damaged">Damaged</option>
-                                                    </select>
-                                                    <span asp-validation-for="Condition" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="card mt-3">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-calendar me-2"></i>
-                                            Dates & Financial Information
-                                        </h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Purchase_Date" class="form-label">Purchase Date</label>
-                                                    <input asp-for="Purchase_Date" class="form-control" type="date" />
-                                                    <span asp-validation-for="Purchase_Date" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Warranty_Expiry" class="form-label">Warranty Expiry</label>
-                                                    <input asp-for="Warranty_Expiry" class="form-control" type="date" />
-                                                    <span asp-validation-for="Warranty_Expiry" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Purchase_Cost" class="form-label">Purchase Cost</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">$</span>
-                                                        <input asp-for="Purchase_Cost" class="form-control" type="number" step="0.01" />
-                                                    </div>
-                                                    <span asp-validation-for="Purchase_Cost" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label asp-for="Current_Value" class="form-label">Current Value</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">$</span>
-                                                        <input asp-for="Current_Value" class="form-control" type="number" step="0.01" />
-                                                    </div>
-                                                    <span asp-validation-for="Current_Value" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label asp-for="Last_Maintenance_Date" class="form-label">Last Maintenance Date</label>
-                                            <input asp-for="Last_Maintenance_Date" class="form-control" type="date" />
-                                            <span asp-validation-for="Last_Maintenance_Date" class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-map-marker-alt me-2"></i>
-                                            Location Assignment
-                                        </h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label asp-for="CurrentLocationId" class="form-label">Location</label>
-                                            <select asp-for="CurrentLocationId" class="form-select" asp-items="ViewBag.Locations">
-                                                <option value="">-- Select Location --</option>
-                                            </select>
-                                            <span asp-validation-for="CurrentLocationId" class="text-danger"></span>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label asp-for="CurrentFloorPlanId" class="form-label">Floor Plan</label>
-                                            <select asp-for="CurrentFloorPlanId" class="form-select" asp-items="ViewBag.FloorPlans">
-                                                <option value="">-- Select Floor Plan --</option>
-                                            </select>
-                                            <span asp-validation-for="CurrentFloorPlanId" class="text-danger"></span>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label asp-for="CurrentDeskId" class="form-label">Desk</label>
-                                            <select asp-for="CurrentDeskId" class="form-select" asp-items="ViewBag.Desks">
-                                                <option value="">-- Select Desk --</option>
-                                            </select>
-                                            <span asp-validation-for="CurrentDeskId" class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="card mt-3">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-user me-2"></i>
-                                            User Assignment
-                                        </h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label asp-for="AssignedEntraUserId" class="form-label">Assigned User</label>
-                                            <select asp-for="AssignedEntraUserId" class="form-select" asp-items="ViewBag.EntraUsers">
-                                                <option value="">-- Select User --</option>
-                                            </select>
-                                            <span asp-validation-for="AssignedEntraUserId" class="text-danger"></span>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label asp-for="AssignedPersonId" class="form-label">Assigned Person (Legacy)</label>
-                                            <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.Persons">
-                                                <option value="">-- Select Person --</option>
-                                            </select>
-                                            <span asp-validation-for="AssignedPersonId" class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="card mt-3">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-sticky-note me-2"></i>
-                                            Additional Information
-                                        </h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label asp-for="Notes" class="form-label">Notes</label>
-                                            <textarea asp-for="Notes" class="form-control" rows="4" placeholder="Enter any additional notes..."></textarea>
-                                            <span asp-validation-for="Notes" class="text-danger"></span>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label asp-for="IsActive" class="form-label">Status</label>
-                                            <div class="form-check">
-                                                <input asp-for="IsActive" class="form-check-input" />
-                                                <label asp-for="IsActive" class="form-check-label">
-                                                    Active
-                                                </label>
-                                            </div>
-                                            <span asp-validation-for="IsActive" class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between">
-                                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
-                                        <i class="fas fa-eye me-2"></i>
-                                        View Details
-                                    </a>
-                                    <div>
-                                        <a asp-action="Index" class="btn btn-outline-secondary me-2">
-                                            <i class="fas fa-times me-2"></i>
-                                            Cancel
-                                        </a>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>
-                                            Save Changes
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-edit me-2 text-primary"></i>
+                    Edit Equipment - <span class="text-muted">@Model.OATH_Tag</span>
+                </h2>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to List
+                </a>
             </div>
         </div>
     </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedAt" />
+        
+        <!-- Row 1: Core Equipment Data -->
+        <div class="row mb-4">
+            <!-- Basic Info Card -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Basic Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="OATH_Tag" class="form-label fw-bold">OATH Tag</label>
+                            <input asp-for="OATH_Tag" class="form-control" readonly />
+                            <div class="form-text">OATH Tag cannot be changed once created.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Serial_Number" class="form-label">Serial Number</label>
+                            <input asp-for="Serial_Number" class="form-control" />
+                            <span asp-validation-for="Serial_Number" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="CurrentStatusId" class="form-label">Status</label>
+                            <select asp-for="CurrentStatusId" class="form-select" asp-items="ViewBag.Statuses">
+                                <option value="">-- Select Status --</option>
+                            </select>
+                            <span asp-validation-for="CurrentStatusId" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Card -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-desktop me-2"></i>
+                            Equipment Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Manufacturer" class="form-label">Manufacturer</label>
+                            <input asp-for="Manufacturer" class="form-control" />
+                            <span asp-validation-for="Manufacturer" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Model" class="form-label">Model</label>
+                            <input asp-for="Model" class="form-control" />
+                            <span asp-validation-for="Model" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="AssetCategoryId" class="form-label">Category</label>
+                            <select asp-for="AssetCategoryId" class="form-select" asp-items="ViewBag.Categories" id="CategorySelect">
+                                <option value="">-- Select Category --</option>
+                            </select>
+                            <span asp-validation-for="AssetCategoryId" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technology Configuration Card -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Technology Configuration
+                        </h5>
+                        <small class="text-light">IT Support Access</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Service_Tag" class="form-label">Service Tag</label>
+                            <input asp-for="Service_Tag" class="form-control" />
+                            <span asp-validation-for="Service_Tag" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Computer_Name" class="form-label">Net Name (Hostname)</label>
+                            <input asp-for="Computer_Name" class="form-control" />
+                            <span asp-validation-for="Computer_Name" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="IP_Address" class="form-label">IP Address</label>
+                            <input asp-for="IP_Address" class="form-control" />
+                            <span asp-validation-for="IP_Address" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Phone_Number" class="form-label">Phone Number</label>
+                            <input asp-for="Phone_Number" class="form-control" />
+                            <span asp-validation-for="Phone_Number" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="OS_Version" class="form-label">OS Version</label>
+                            <input asp-for="OS_Version" class="form-control" />
+                            <span asp-validation-for="OS_Version" class="text-danger"></span>
+                        </div>
+
+                        <!-- Conditional Fields Based on Category -->
+                        <div id="conditionalTechFields">
+                            <!-- IMEI field for mobile devices -->
+                            <div class="mb-3 tech-field" data-categories="Mobile Phone,Tablet,Cellular Device">
+                                <label asp-for="TechnologyConfiguration.IMEI" class="form-label">IMEI</label>
+                                <input asp-for="TechnologyConfiguration.IMEI" class="form-control" />
+                                <span asp-validation-for="TechnologyConfiguration.IMEI" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- SIM Card for mobile devices -->
+                            <div class="mb-3 tech-field" data-categories="Mobile Phone,Tablet,Cellular Device">
+                                <label asp-for="TechnologyConfiguration.SIMCardNumber" class="form-label">SIM Card Number</label>
+                                <input asp-for="TechnologyConfiguration.SIMCardNumber" class="form-control" />
+                                <span asp-validation-for="TechnologyConfiguration.SIMCardNumber" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Network fields for computers/printers -->
+                            <div class="mb-3 tech-field" data-categories="Desktop,Laptop,Printer,Server">
+                                <label asp-for="TechnologyConfiguration.MACAddress" class="form-label">MAC Address</label>
+                                <input asp-for="TechnologyConfiguration.MACAddress" class="form-control" />
+                                <span asp-validation-for="TechnologyConfiguration.MACAddress" class="text-danger"></span>
+                            </div>
+                            
+                            <!-- Switch/Port info for network devices -->
+                            <div class="mb-3 tech-field" data-categories="Desktop,Laptop,Printer,Server">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label asp-for="TechnologyConfiguration.SwitchName" class="form-label">Switch Name</label>
+                                        <input asp-for="TechnologyConfiguration.SwitchName" class="form-control" />
+                                    </div>
+                                    <div class="col-6">
+                                        <label asp-for="TechnologyConfiguration.SwitchPort" class="form-label">Switch Port</label>
+                                        <input asp-for="TechnologyConfiguration.SwitchPort" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Assignment & Business -->
+        <div class="row mb-4">
+            <!-- People/Person Card -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2"></i>
+                            User Assignment
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="AssignedEntraUserId" class="form-label">Assigned User</label>
+                            <select asp-for="AssignedEntraUserId" class="form-select" asp-items="ViewBag.EntraUsers">
+                                <option value="">-- Select User --</option>
+                            </select>
+                            <span asp-validation-for="AssignedEntraUserId" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="AssignedPersonId" class="form-label">Assigned Person (Legacy)</label>
+                            <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.Persons">
+                                <option value="">-- Select Person --</option>
+                            </select>
+                            <span asp-validation-for="AssignedPersonId" class="text-danger"></span>
+                            <div class="form-text">For users not yet in Entra ID system</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location/Facility Card -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Location Assignment
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="CurrentLocationId" class="form-label">Location</label>
+                            <select asp-for="CurrentLocationId" class="form-select" asp-items="ViewBag.Locations" id="CurrentLocationId">
+                                <option value="">-- Select Location --</option>
+                            </select>
+                            <span asp-validation-for="CurrentLocationId" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="CurrentFloorPlanId" class="form-label">Floor Plan</label>
+                            <select asp-for="CurrentFloorPlanId" class="form-select" id="CurrentFloorPlanId">
+                                <option value="">-- Select Floor Plan --</option>
+                            </select>
+                            <span asp-validation-for="CurrentFloorPlanId" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="CurrentDeskId" class="form-label">Desk</label>
+                            <select asp-for="CurrentDeskId" class="form-select" id="CurrentDeskId">
+                                <option value="">-- Select Desk --</option>
+                            </select>
+                            <span asp-validation-for="CurrentDeskId" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Current_Location_Notes" class="form-label">Location Notes</label>
+                            <textarea asp-for="Current_Location_Notes" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Current_Location_Notes" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Procurement Card -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Procurement Information
+                        </h5>
+                        <small class="text-light">Financial & Vendor Data</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="PurchaseDate" class="form-label">Purchase Date</label>
+                            <input asp-for="PurchaseDate" class="form-control" type="date" />
+                            <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="PurchasePrice" class="form-label">Purchase Cost</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="PurchasePrice" class="form-control" type="number" step="0.01" />
+                            </div>
+                            <span asp-validation-for="PurchasePrice" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="PurchaseOrderNumber" class="form-label">Purchase Order #</label>
+                            <input asp-for="PurchaseOrderNumber" class="form-control" />
+                            <span asp-validation-for="PurchaseOrderNumber" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label asp-for="WarrantyStartDate" class="form-label">Warranty Start</label>
+                                    <input asp-for="WarrantyStartDate" class="form-control" type="date" />
+                                    <span asp-validation-for="WarrantyStartDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-3">
+                                    <label asp-for="WarrantyEndDate" class="form-label">Warranty End</label>
+                                    <input asp-for="WarrantyEndDate" class="form-control" type="date" />
+                                    <span asp-validation-for="WarrantyEndDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">Procurement Notes</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Vendor contact, special terms, etc."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-save me-2"></i>
+                            Save Changes
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-eye me-2"></i>
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
+        // Store original values (ensure they are numbers for proper comparison)
+        const originalFloorPlanId = @(Model.CurrentFloorPlanId ?? 0);
+        const originalDeskId = @(Model.CurrentDeskId ?? 0);
+        
+        // Debug equipment data
+        console.log('Equipment data:', {
+            id: @Model.Id,
+            oathTag: '@Model.OATH_Tag',
+            locationId: @(Model.CurrentLocationId ?? 0),
+            floorPlanId: originalFloorPlanId,
+            deskId: originalDeskId,
+            locationName: '@(Model.CurrentLocation?.Name ?? "None")',
+            floorName: '@(Model.CurrentFloorPlan?.FloorNumber ?? "None")',
+            deskNumber: '@(Model.CurrentDesk?.DeskNumber ?? "None")'
+        });
+        
+        // Debug form field values
+        const locationElement = document.getElementById('CurrentLocationId');
+        console.log('Form field values:', {
+            locationSelectValue: locationElement.value,
+            locationSelectValueAsNumber: parseInt(locationElement.value) || 0,
+            floorSelectValue: document.getElementById('CurrentFloorPlanId').value,
+            deskSelectValue: document.getElementById('CurrentDeskId').value
+        });
+        
+        // Debug location select element
+        console.log('Location select element debug:', {
+            selectedIndex: locationElement.selectedIndex,
+            selectedOptionText: locationElement.options[locationElement.selectedIndex]?.text || 'None',
+            selectedOptionValue: locationElement.options[locationElement.selectedIndex]?.value || 'None',
+            allOptions: Array.from(locationElement.options).map(opt => ({text: opt.text, value: opt.value}))
+        });
+
+        // Category-based conditional field display
+        function toggleTechFields() {
+            const categorySelect = document.getElementById('CategorySelect');
+            const selectedCategory = categorySelect.options[categorySelect.selectedIndex]?.text || '';
+            
+            console.log('Selected category:', selectedCategory);
+            
+            // Hide all conditional fields first
+            document.querySelectorAll('.tech-field').forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            // Show relevant fields based on category
+            document.querySelectorAll('.tech-field').forEach(field => {
+                const categories = field.getAttribute('data-categories').split(',');
+                if (categories.some(cat => selectedCategory.includes(cat.trim()))) {
+                    field.style.display = 'block';
+                }
+            });
+        }
+
         // Dynamic loading of floor plans based on selected location
         document.getElementById('CurrentLocationId').addEventListener('change', function() {
             const locationId = this.value;
@@ -314,16 +406,7 @@
             deskSelect.innerHTML = '<option value="">-- Select Desk --</option>';
             
             if (locationId) {
-                fetch(`/FloorPlan/GetFloorPlansByLocation/${locationId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(floorPlan => {
-                            const option = document.createElement('option');
-                            option.value = floorPlan.id;
-                            option.textContent = `${floorPlan.floorNumber}${floorPlan.floorName ? ' - ' + floorPlan.floorName : ''}`;
-                            floorPlanSelect.appendChild(option);
-                        });
-                    });
+                loadFloorPlans(locationId);
             }
         });
 
@@ -336,17 +419,117 @@
             deskSelect.innerHTML = '<option value="">-- Select Desk --</option>';
             
             if (floorPlanId) {
+                loadDesks(floorPlanId);
+            }
+        });
+
+        // Category change handler
+        document.getElementById('CategorySelect').addEventListener('change', toggleTechFields);
+
+        // Function to load floor plans for a location
+        function loadFloorPlans(locationId, selectFloorPlanId = null) {
+            const floorPlanSelect = document.getElementById('CurrentFloorPlanId');
+            const deskSelect = document.getElementById('CurrentDeskId');
+            
+            console.log('loadFloorPlans called with locationId:', locationId, 'selectFloorPlanId:', selectFloorPlanId);
+            
+            // Clear floor plans and desks
+            floorPlanSelect.innerHTML = '<option value="">-- Select Floor Plan --</option>';
+            deskSelect.innerHTML = '<option value="">-- Select Desk --</option>';
+            
+            if (locationId) {
+                const apiUrl = `/FloorPlan/GetFloorPlansByLocation/${locationId}`;
+                console.log('Making API call to:', apiUrl);
+                
+                fetch(apiUrl)
+                    .then(response => {
+                        console.log('API response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Floor plans loaded:', data);
+                        data.forEach(floorPlan => {
+                            const option = document.createElement('option');
+                            option.value = floorPlan.id;
+                            option.textContent = floorPlan.floorNumber + (floorPlan.floorName && floorPlan.floorName !== floorPlan.floorNumber ? ' - ' + floorPlan.floorName : '');
+                            
+                            // Select the target floor plan (either passed or original)
+                            const targetFloorPlanId = selectFloorPlanId || originalFloorPlanId;
+                            if (floorPlan.id == targetFloorPlanId) {
+                                option.selected = true;
+                                console.log('Selected floor plan:', floorPlan.id);
+                                // Load desks for this floor plan
+                                setTimeout(() => loadDesks(floorPlan.id, originalDeskId), 100);
+                            }
+                            
+                            floorPlanSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.log('Error loading floor plans:', error);
+                    });
+            }
+        }
+
+        // Function to load desks for a floor plan
+        function loadDesks(floorPlanId, selectDeskId = null) {
+            const deskSelect = document.getElementById('CurrentDeskId');
+            
+            // Clear desks
+            deskSelect.innerHTML = '<option value="">-- Select Desk --</option>';
+            
+            if (floorPlanId) {
                 fetch(`/FloorPlan/GetDesksByFloorPlan/${floorPlanId}`)
                     .then(response => response.json())
                     .then(data => {
+                        console.log('Desks loaded:', data);
                         data.forEach(desk => {
                             const option = document.createElement('option');
                             option.value = desk.id;
-                            option.textContent = `${desk.deskNumber}${desk.deskName ? ' - ' + desk.deskName : ''}`;
+                            // Avoid duplicating text if deskNumber and deskName are the same
+                            if (desk.deskName && desk.deskName !== desk.deskNumber) {
+                                option.textContent = `${desk.deskNumber} - ${desk.deskName}`;
+                            } else {
+                                option.textContent = desk.deskNumber;
+                            }
+                            
+                            // Select the target desk (either passed or original)
+                            const targetDeskId = selectDeskId || originalDeskId;
+                            if (desk.id == targetDeskId) {
+                                option.selected = true;
+                                console.log('Selected desk:', desk.id);
+                            }
+                            
                             deskSelect.appendChild(option);
                         });
+                    })
+                    .catch(error => {
+                        console.log('Error loading desks:', error);
                     });
             }
+        }
+
+        // Load floor plans and desks on page load if location is already selected
+        document.addEventListener('DOMContentLoaded', function() {
+            const locationSelect = document.getElementById('CurrentLocationId');
+            const equipmentLocationId = @(Model.CurrentLocationId ?? 0);
+            
+            console.log('Page loaded. Current location:', locationSelect.value);
+            console.log('Equipment locationId from server:', equipmentLocationId);
+            
+            if (equipmentLocationId > 0) {
+                // Add a small delay to ensure DOM is fully ready
+                setTimeout(function() {
+                    console.log('Loading floor plans with delay for location ID:', equipmentLocationId);
+                    // Load floor plans for the current location and restore original selections
+                    loadFloorPlans(equipmentLocationId, originalFloorPlanId);
+                }, 100);
+            } else {
+                console.log('No location selected, cannot load floor plans and desks');
+            }
+            
+            // Initialize conditional tech fields
+            toggleTechFields();
         });
     </script>
 }

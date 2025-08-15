@@ -1,0 +1,452 @@
+@model AssetManagement.Models.TechnologyConfiguration
+
+@{
+    ViewData["Title"] = "Create Technology Configuration";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-plus-circle"></i> Create Technology Configuration</h2>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <form asp-action="Create">
+                                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                                <!-- Equipment Selection with Autocomplete and Dropdown -->
+                                <div class="mb-3">
+                                    <label asp-for="EquipmentId" class="form-label">Equipment <span class="text-danger">*</span></label>
+                                    
+                                    <!-- Tab Navigation -->
+                                    <ul class="nav nav-tabs" id="equipmentSelectionTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-panel" type="button" role="tab">
+                                                <i class="bi bi-search"></i> Search
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="dropdown-tab" data-bs-toggle="tab" data-bs-target="#dropdown-panel" type="button" role="tab">
+                                                <i class="bi bi-list"></i> Select from List
+                                            </button>
+                                        </li>
+                                    </ul>
+                                    
+                                    <!-- Tab Content -->
+                                    <div class="tab-content border border-top-0 p-3" id="equipmentSelectionContent">
+                                        <!-- Search Panel -->
+                                        <div class="tab-pane fade show active" id="search-panel" role="tabpanel">
+                                            <input type="hidden" asp-for="EquipmentId" id="equipmentIdHidden" />
+                                            <input type="text" id="equipmentSearch" class="form-control" placeholder="Search by OATH Tag, Model, or Serial Number..." autocomplete="off" />
+                                            <div id="equipmentSuggestions" class="position-absolute bg-white border rounded shadow-sm" style="z-index: 1000; display: none; width: 100%;"></div>
+                                            <small class="text-muted">Start typing to search for equipment...</small>
+                                        </div>
+                                        
+                                        <!-- Dropdown Panel -->
+                                        <div class="tab-pane fade" id="dropdown-panel" role="tabpanel">
+                                            <select id="equipmentDropdown" class="form-select">
+                                                <option value="">-- Select Equipment --</option>
+                                            </select>
+                                            <small class="text-muted">Choose equipment from the complete list</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <span asp-validation-for="EquipmentId" class="text-danger"></span>
+                                </div>
+
+                                <!-- Network Configuration -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-router"></i> Network Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="NetName" class="form-label">Net Name</label>
+                                                    <input asp-for="NetName" class="form-control" placeholder="Computer/Device network name" />
+                                                    <span asp-validation-for="NetName" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="IPv4Address" class="form-label">IPv4 Address</label>
+                                                    <input asp-for="IPv4Address" class="form-control" placeholder="192.168.1.100" />
+                                                    <span asp-validation-for="IPv4Address" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="MACAddress" class="form-label">MAC Address</label>
+                                                    <input asp-for="MACAddress" class="form-control" placeholder="00:11:22:33:44:55" />
+                                                    <span asp-validation-for="MACAddress" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="WallPort" class="form-label">Wall Port</label>
+                                                    <input asp-for="WallPort" class="form-control" placeholder="A1-01" />
+                                                    <span asp-validation-for="WallPort" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="SwitchName" class="form-label">Switch Name</label>
+                                                    <input asp-for="SwitchName" class="form-control" placeholder="SW-Floor1" />
+                                                    <span asp-validation-for="SwitchName" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="SwitchPort" class="form-label">Switch Port</label>
+                                                    <input asp-for="SwitchPort" class="form-control" placeholder="Gi0/1" />
+                                                    <span asp-validation-for="SwitchPort" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Configuration -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-telephone"></i> Phone Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                                    <input asp-for="PhoneNumber" class="form-control" placeholder="(555) 123-4567" />
+                                                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="Extension" class="form-label">Extension</label>
+                                                    <input asp-for="Extension" class="form-control" placeholder="1234" />
+                                                    <span asp-validation-for="Extension" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mobile Configuration -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-phone"></i> Mobile Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="IMEI" class="form-label">IMEI</label>
+                                                    <input asp-for="IMEI" class="form-control" placeholder="123456789012345" />
+                                                    <span asp-validation-for="IMEI" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="SIMCardNumber" class="form-label">SIM Card Number</label>
+                                                    <input asp-for="SIMCardNumber" class="form-control" placeholder="89012345678901234567" />
+                                                    <span asp-validation-for="SIMCardNumber" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="Vendor" class="form-label">Vendor/Carrier</label>
+                                                    <input asp-for="Vendor" class="form-control" placeholder="Verizon, AT&T, etc." />
+                                                    <span asp-validation-for="Vendor" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- License Information -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-key"></i> License Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License1" class="form-label">License 1</label>
+                                                    <input asp-for="License1" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License1" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License2" class="form-label">License 2</label>
+                                                    <input asp-for="License2" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License2" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License3" class="form-label">License 3</label>
+                                                    <input asp-for="License3" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License3" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License4" class="form-label">License 4</label>
+                                                    <input asp-for="License4" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License4" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="License5" class="form-label">License 5</label>
+                                                    <input asp-for="License5" class="form-control" placeholder="Software license or key" />
+                                                    <span asp-validation-for="License5" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Notes -->
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Additional Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label asp-for="ConfigurationNotes" class="form-label">Configuration Notes</label>
+                                            <textarea asp-for="ConfigurationNotes" class="form-control" rows="4" placeholder="Additional configuration details, special settings, etc."></textarea>
+                                            <span asp-validation-for="ConfigurationNotes" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Buttons -->
+                                <div class="d-flex justify-content-between">
+                                    <a asp-action="Index" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Create Configuration
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Panel -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Help</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Network Configuration</h6>
+                            <ul class="small">
+                                <li><strong>Net Name:</strong> Computer name on the network</li>
+                                <li><strong>MAC Address:</strong> Physical network adapter address</li>
+                                <li><strong>Wall Port:</strong> Physical network jack identifier</li>
+                                <li><strong>Switch Port:</strong> Network switch port connection</li>
+                            </ul>
+
+                            <h6>Phone Configuration</h6>
+                            <ul class="small">
+                                <li><strong>Phone Number:</strong> Direct phone line</li>
+                                <li><strong>Extension:</strong> Internal extension number</li>
+                            </ul>
+
+                            <h6>Mobile Configuration</h6>
+                            <ul class="small">
+                                <li><strong>IMEI:</strong> International Mobile Equipment Identity</li>
+                                <li><strong>SIM Card:</strong> Subscriber Identity Module number</li>
+                                <li><strong>Vendor:</strong> Mobile service provider</li>
+                            </ul>
+
+                            <h6>License Information</h6>
+                            <ul class="small">
+                                <li><strong>Licenses:</strong> Software licenses, product keys, or activation codes</li>
+                                <li>Store important license information for software tracking</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Equipment selection functionality
+        let searchTimeout;
+        const equipmentSearch = document.getElementById('equipmentSearch');
+        const equipmentSuggestions = document.getElementById('equipmentSuggestions');
+        const equipmentDropdown = document.getElementById('equipmentDropdown');
+        const equipmentIdHidden = document.getElementById('equipmentIdHidden');
+        let selectedIndex = -1;
+        let allEquipment = [];
+
+        // Load all equipment for dropdown on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllEquipment();
+        });
+
+        // Tab switching event listeners
+        document.getElementById('search-tab').addEventListener('shown.bs.tab', function() {
+            equipmentSearch.value = '';
+            equipmentIdHidden.value = '';
+            equipmentSuggestions.style.display = 'none';
+        });
+
+        document.getElementById('dropdown-tab').addEventListener('shown.bs.tab', function() {
+            equipmentDropdown.value = '';
+            equipmentIdHidden.value = '';
+        });
+
+        // Search functionality
+        equipmentSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                equipmentSuggestions.style.display = 'none';
+                equipmentIdHidden.value = '';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetchEquipmentSuggestions(query);
+            }, 300);
+        });
+
+        equipmentSearch.addEventListener('keydown', function(e) {
+            const suggestions = equipmentSuggestions.querySelectorAll('.suggestion-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+                updateEquipmentSelection(suggestions);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateEquipmentSelection(suggestions);
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                suggestions[selectedIndex].click();
+            } else if (e.key === 'Escape') {
+                equipmentSuggestions.style.display = 'none';
+                selectedIndex = -1;
+            }
+        });
+
+        // Dropdown functionality
+        equipmentDropdown.addEventListener('change', function() {
+            const selectedId = this.value;
+            equipmentIdHidden.value = selectedId;
+            
+            // Clear search field when dropdown is used
+            equipmentSearch.value = '';
+            equipmentSuggestions.style.display = 'none';
+        });
+
+        async function loadAllEquipment() {
+            try {
+                const response = await fetch('/TechnologyConfiguration/GetEquipmentSuggestions?query=');
+                const equipment = await response.json();
+                allEquipment = equipment;
+                populateEquipmentDropdown(equipment);
+            } catch (error) {
+                console.error('Error loading equipment:', error);
+            }
+        }
+
+        function populateEquipmentDropdown(equipment) {
+            // Clear existing options except the first one
+            while (equipmentDropdown.children.length > 1) {
+                equipmentDropdown.removeChild(equipmentDropdown.lastChild);
+            }
+
+            // Add equipment options
+            equipment.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.Id || item.Value;
+                option.textContent = item.Label;
+                equipmentDropdown.appendChild(option);
+            });
+        }
+
+        async function fetchEquipmentSuggestions(query) {
+            try {
+                const response = await fetch(`/TechnologyConfiguration/GetEquipmentSuggestions?query=${encodeURIComponent(query)}`);
+                const suggestions = await response.json();
+                displayEquipmentSuggestions(suggestions);
+            } catch (error) {
+                console.error('Error fetching equipment suggestions:', error);
+            }
+        }
+
+        function displayEquipmentSuggestions(suggestions) {
+            if (suggestions.length === 0) {
+                equipmentSuggestions.style.display = 'none';
+                return;
+            }
+
+            const html = suggestions.map(suggestion => 
+                `<div class="suggestion-item p-2 cursor-pointer hover:bg-gray-100" onclick="selectEquipment(${suggestion.Id || suggestion.Value}, '${suggestion.Label}')">${suggestion.Label}</div>`
+            ).join('');
+
+            equipmentSuggestions.innerHTML = html;
+            equipmentSuggestions.style.display = 'block';
+            selectedIndex = -1;
+        }
+
+        function updateEquipmentSelection(suggestions) {
+            suggestions.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('bg-light');
+                } else {
+                    item.classList.remove('bg-light');
+                }
+            });
+        }
+
+        function selectEquipment(id, label) {
+            equipmentSearch.value = label;
+            equipmentIdHidden.value = id;
+            equipmentSuggestions.style.display = 'none';
+            
+            // Clear dropdown selection when search is used
+            equipmentDropdown.value = '';
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!equipmentSearch.contains(e.target) && !equipmentSuggestions.contains(e.target)) {
+                equipmentSuggestions.style.display = 'none';
+            }
+        });
+    </script>
+}
