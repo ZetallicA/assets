@@ -15,7 +15,9 @@ namespace AssetManagement.Controllers
         }
 
         // GET: Equipment
-        public async Task<IActionResult> Index(string searchString, string sortOrder, int? pageNumber, int? pageSize)
+        public async Task<IActionResult> Index(string searchString, string sortOrder, int? pageNumber, int? pageSize, 
+            string? categoryFilter, string? statusFilter, string? departmentFilter, 
+            string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? netNameFilter, string? modelFilter)
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["OATHTagSortParm"] = String.IsNullOrEmpty(sortOrder) ? "oath_tag_desc" : "";
@@ -25,7 +27,16 @@ namespace AssetManagement.Controllers
             ViewData["LocationSortParm"] = sortOrder == "location" ? "location_desc" : "location";
             ViewData["AssignedToSortParm"] = sortOrder == "assigned" ? "assigned_desc" : "assigned";
             ViewData["CategorySortParm"] = sortOrder == "category" ? "category_desc" : "category";
+            ViewData["DepartmentSortParm"] = sortOrder == "department" ? "department_desc" : "department";
             ViewData["CurrentFilter"] = searchString;
+            ViewData["CategoryFilter"] = categoryFilter;
+            ViewData["StatusFilter"] = statusFilter;
+            ViewData["DepartmentFilter"] = departmentFilter;
+            ViewData["OathTagFilter"] = oathTagFilter;
+            ViewData["AssignedToFilter"] = assignedToFilter;
+            ViewData["LocationFilter"] = locationFilter;
+            ViewData["NetNameFilter"] = netNameFilter;
+            ViewData["ModelFilter"] = modelFilter;
             
             // Page size options
             var pageSizeOptions = new List<int> { 10, 25, 50, 100 };
@@ -42,6 +53,7 @@ namespace AssetManagement.Controllers
                            .Include(e => e.AssignedEntraUser)
                            select e;
 
+            // Apply search filter
             if (!String.IsNullOrEmpty(searchString))
             {
                 equipment = equipment.Where(e => e.OATH_Tag.Contains(searchString) ||
@@ -54,6 +66,56 @@ namespace AssetManagement.Controllers
                                                 e.Department.Contains(searchString) ||
                                                 e.Facility.Contains(searchString));
             }
+
+            // Apply category filter
+            if (!String.IsNullOrEmpty(categoryFilter))
+            {
+                equipment = equipment.Where(e => e.AssetCategory != null && e.AssetCategory.Name == categoryFilter);
+            }
+
+            // Apply status filter
+            if (!String.IsNullOrEmpty(statusFilter))
+            {
+                equipment = equipment.Where(e => e.CurrentStatus != null && e.CurrentStatus.Name == statusFilter);
+            }
+
+            // Apply department filter
+            if (!String.IsNullOrEmpty(departmentFilter))
+            {
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Department) && e.Department == departmentFilter);
+            }
+
+            // Apply OATH Tag filter
+            if (!String.IsNullOrEmpty(oathTagFilter))
+            {
+                equipment = equipment.Where(e => e.OATH_Tag == oathTagFilter);
+            }
+
+            // Apply Assigned To filter
+            if (!String.IsNullOrEmpty(assignedToFilter))
+            {
+                equipment = equipment.Where(e => e.Assigned_User_Name == assignedToFilter);
+            }
+
+            // Apply Location filter
+            if (!String.IsNullOrEmpty(locationFilter))
+            {
+                equipment = equipment.Where(e => e.CurrentLocation != null && e.CurrentLocation.Name == locationFilter);
+            }
+
+            // Apply Net Name filter
+            if (!String.IsNullOrEmpty(netNameFilter))
+            {
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Computer_Name) && e.Computer_Name == netNameFilter);
+            }
+
+            // Apply Model filter
+            if (!String.IsNullOrEmpty(modelFilter))
+            {
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Model) && e.Model == modelFilter);
+            }
+
+
 
             equipment = sortOrder switch
             {
@@ -70,8 +132,70 @@ namespace AssetManagement.Controllers
                 "assigned_desc" => equipment.OrderByDescending(e => e.Assigned_User_Name),
                 "category" => equipment.OrderBy(e => e.AssetCategory.Name),
                 "category_desc" => equipment.OrderByDescending(e => e.AssetCategory.Name),
+                "department" => equipment.OrderBy(e => e.Department),
+                "department_desc" => equipment.OrderByDescending(e => e.Department),
                 _ => equipment.OrderBy(e => e.OATH_Tag),
             };
+
+            // Get filter options for dropdowns
+            ViewData["CategoryOptions"] = await _context.AssetCategories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .Select(c => c.Name)
+                .ToListAsync();
+
+            ViewData["StatusOptions"] = await _context.AssetStatuses
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.Name)
+                .Select(s => s.Name)
+                .ToListAsync();
+
+            ViewData["DepartmentOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Department))
+                .Select(e => e.Department)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+
+            // Get OATH Tag options
+            ViewData["OathTagOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.OATH_Tag))
+                .Select(e => e.OATH_Tag)
+                .Distinct()
+                .OrderBy(o => o)
+                .ToListAsync();
+
+            // Get Assigned To options
+            ViewData["AssignedToOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Assigned_User_Name))
+                .Select(e => e.Assigned_User_Name)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToListAsync();
+
+            // Get Location options
+            ViewData["LocationOptions"] = await _context.Equipment
+                .Where(e => e.CurrentLocation != null)
+                .Select(e => e.CurrentLocation.Name)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToListAsync();
+
+            // Get Net Name options
+            ViewData["NetNameOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Computer_Name))
+                .Select(e => e.Computer_Name)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToListAsync();
+
+            // Get Model options
+            ViewData["ModelOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Model))
+                .Select(e => e.Model)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToListAsync();
 
             int currentPageSize = pageSize ?? 20;
             return View(await PaginatedList<Equipment>.CreateAsync(equipment.AsNoTracking(), pageNumber ?? 1, currentPageSize));

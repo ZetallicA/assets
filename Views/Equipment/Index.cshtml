@@ -3,6 +3,60 @@
     ViewData["Title"] = "Equipment";
 }
 
+<style>
+    .filter-button {
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+    }
+    
+    .filter-button.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .filter-button:hover {
+        background-color: #e9ecef;
+    }
+    
+    .filter-button.active:hover {
+        background-color: #0056b3;
+    }
+    
+    .dropdown-menu {
+        min-width: 200px;
+    }
+    
+    .dropdown-item.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .table th {
+        position: relative;
+    }
+    
+    .dropdown-menu input[type="text"] {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+    
+    .dropdown-menu input[type="text"]:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .filter-item {
+        transition: all 0.2s ease;
+    }
+    
+    .filter-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -14,11 +68,12 @@
         </a>
     </div>
 
-    <!-- Search Form -->
+    <!-- Search and Filter Form -->
     <div class="card mb-4">
         <div class="card-body">
             <form asp-action="Index" method="get" class="row g-3">
-                <div class="col-md-8">
+                <!-- Search Input -->
+                <div class="col-md-6">
                     <div class="input-group">
                         <input type="text" class="form-control" id="searchInput" name="SearchString" value="@ViewData["CurrentFilter"]" placeholder="Search by OATH Tag, Serial Number, Net Name, User, Model, Manufacturer, Department, or Facility..." autocomplete="off">
                         <div id="searchSuggestions" class="position-absolute bg-white border rounded shadow-sm" style="top: 100%; left: 0; right: 0; z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
@@ -33,17 +88,59 @@
                         }
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="d-flex gap-2">
-                        <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-sort-alpha-down"></i> OATH Tag
-                        </a>
-                        <a asp-action="Index" asp-route-sortOrder="@ViewData["StatusSortParm"]" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-sort-alpha-down"></i> Status
-                        </a>
-                        <a asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-sort-alpha-down"></i> Location
-                        </a>
+                
+                <!-- Filter Dropdowns -->
+                <div class="col-md-6">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <select name="categoryFilter" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Categories</option>
+                                @foreach (var category in ViewData["CategoryOptions"] as List<string> ?? new List<string>())
+                                {
+                                    if (category == ViewData["CategoryFilter"]?.ToString())
+                                    {
+                                        <option value="@category" selected>@category</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@category">@category</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="statusFilter" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Statuses</option>
+                                @foreach (var status in ViewData["StatusOptions"] as List<string> ?? new List<string>())
+                                {
+                                    if (status == ViewData["StatusFilter"]?.ToString())
+                                    {
+                                        <option value="@status" selected>@status</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="departmentFilter" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Units</option>
+                                @foreach (var dept in ViewData["DepartmentOptions"] as List<string> ?? new List<string>())
+                                {
+                                    if (dept == ViewData["DepartmentFilter"]?.ToString())
+                                    {
+                                        <option value="@dept" selected>@dept</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@dept">@dept</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
                     </div>
                 </div>
             </form>
@@ -74,123 +171,543 @@
                         <thead class="table-light">
                             <tr>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        OATH Tag
-                                        @if (ViewData["CurrentSort"]?.ToString() == "oath_tag_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            OATH Tag
+                                            @if (ViewData["CurrentSort"]?.ToString() == "oath_tag_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["OathTagFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by OATH Tag</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search OATH tags..." 
+                                                               onkeyup="filterDropdownItems(this, 'oath-tag-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="oath-tag-filter-items">
+                                                    @foreach (var oathTag in ViewData["OathTagOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["OathTagFilter"]?.ToString() == oathTag;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]"
+                                                               asp-route-oathTagFilter="@(isSelected ? "" : oathTag)">
+                                                                @oathTag
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["OathTagFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["NetNameSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        Net Name
-                                        @if (ViewData["CurrentSort"]?.ToString() == "netname_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "netname")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["AssignedToSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Assigned To
+                                            @if (ViewData["CurrentSort"]?.ToString() == "assigned_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "assigned")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["AssignedToFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Assigned To</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search assigned users..." 
+                                                               onkeyup="filterDropdownItems(this, 'assigned-to-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="assigned-to-filter-items">
+                                                    @foreach (var assignedTo in ViewData["AssignedToOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["AssignedToFilter"]?.ToString() == assignedTo;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]"
+                                                               asp-route-assignedToFilter="@(isSelected ? "" : assignedTo)">
+                                                                @assignedTo
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["AssignedToFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["ModelSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        Model
-                                        @if (ViewData["CurrentSort"]?.ToString() == "model_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "model")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Category
+                                            @if (ViewData["CurrentSort"]?.ToString() == "category_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "category")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["CategoryFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Category</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search categories..." 
+                                                               onkeyup="filterDropdownItems(this, 'category-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="category-filter-items">
+                                                    @foreach (var category in ViewData["CategoryOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["CategoryFilter"]?.ToString() == category;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@(isSelected ? "" : category)"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                                @category
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["CategoryFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["StatusSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        Status
-                                        @if (ViewData["CurrentSort"]?.ToString() == "status_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "status")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["DepartmentSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Unit
+                                            @if (ViewData["CurrentSort"]?.ToString() == "department_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "department")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["DepartmentFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Unit</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search units..." 
+                                                               onkeyup="filterDropdownItems(this, 'unit-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="unit-filter-items">
+                                                    @foreach (var dept in ViewData["DepartmentOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["DepartmentFilter"]?.ToString() == dept;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@(isSelected ? "" : dept)">
+                                                                @dept
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["DepartmentFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </th>
+
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Location
+                                            @if (ViewData["CurrentSort"]?.ToString() == "location_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "location")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["LocationFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Location</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search locations..." 
+                                                               onkeyup="filterDropdownItems(this, 'location-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="location-filter-items">
+                                                    @foreach (var location in ViewData["LocationOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["LocationFilter"]?.ToString() == location;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]"
+                                                               asp-route-locationFilter="@(isSelected ? "" : location)">
+                                                                @location
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["LocationFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        Location
-                                        @if (ViewData["CurrentSort"]?.ToString() == "location_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "location")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["StatusSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Status
+                                            @if (ViewData["CurrentSort"]?.ToString() == "status_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "status")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["StatusFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Status</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search statuses..." 
+                                                               onkeyup="filterDropdownItems(this, 'status-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="status-filter-items">
+                                                    @foreach (var status in ViewData["StatusOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["StatusFilter"]?.ToString() == status;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@(isSelected ? "" : status)"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                                @status
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["StatusFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["AssignedToSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        Assigned To
-                                        @if (ViewData["CurrentSort"]?.ToString() == "assigned_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "assigned")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["NetNameSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Net Name
+                                            @if (ViewData["CurrentSort"]?.ToString() == "netname_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "netname")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["NetNameFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Net Name</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search net names..." 
+                                                               onkeyup="filterDropdownItems(this, 'net-name-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="net-name-filter-items">
+                                                    @foreach (var netName in ViewData["NetNameOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["NetNameFilter"]?.ToString() == netName;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]"
+                                                               asp-route-netNameFilter="@(isSelected ? "" : netName)">
+                                                                @netName
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["NetNameFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>
-                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none">
-                                        Category
-                                        @if (ViewData["CurrentSort"]?.ToString() == "category_desc")
-                                        {
-                                            <i class="bi bi-sort-alpha-down ms-1"></i>
-                                        }
-                                        else if (ViewData["CurrentSort"]?.ToString() == "category")
-                                        {
-                                            <i class="bi bi-sort-alpha-up ms-1"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
-                                        }
-                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["ModelSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Model
+                                            @if (ViewData["CurrentSort"]?.ToString() == "model_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "model")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["ModelFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Model</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search models..." 
+                                                               onkeyup="filterDropdownItems(this, 'model-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <div id="model-filter-items">
+                                                    @foreach (var modelName in ViewData["ModelOptions"] as List<string> ?? new List<string>())
+                                                    {
+                                                        var isSelected = ViewData["ModelFilter"]?.ToString() == modelName;
+                                                        <li class="filter-item">
+                                                            <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                               asp-action="Index" 
+                                                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                               asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                               asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                               asp-route-departmentFilter="@ViewData["DepartmentFilter"]"
+                                                               asp-route-modelFilter="@(isSelected ? "" : modelName)">
+                                                                @modelName
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(ViewData["ModelFilter"]?.ToString()))
+                                                {
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-categoryFilter="@ViewData["CategoryFilter"]"
+                                                           asp-route-statusFilter="@ViewData["StatusFilter"]"
+                                                           asp-route-departmentFilter="@ViewData["DepartmentFilter"]">
+                                                            <i class="bi bi-x-circle me-1"></i>Clear Filter
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </th>
                                 <th>Actions</th>
                             </tr>
@@ -204,64 +721,6 @@
                                         @if (!string.IsNullOrEmpty(item.Serial_Number))
                                         {
                                             <br><small class="text-muted">@item.Serial_Number</small>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(item.Computer_Name))
-                                        {
-                                            <span class="badge bg-secondary">@item.Computer_Name</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(item.Model))
-                                        {
-                                            <span>@item.Model</span>
-                                            @if (!string.IsNullOrEmpty(item.Manufacturer))
-                                            {
-                                                <br><small class="text-muted">@item.Manufacturer</small>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (item.CurrentStatus != null)
-                                        {
-                                            <span class="badge" style="background-color: @item.CurrentStatus.Color; color: white;">
-                                                @item.CurrentStatus.Name
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">Unknown</span>
-                                        }
-                                        @if (item.IsCheckedOut)
-                                        {
-                                            <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Checked Out</small>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (item.CurrentLocation != null)
-                                        {
-                                            <span>@item.CurrentLocation.Name</span>
-                                            @if (item.CurrentFloorPlan != null)
-                                            {
-                                                <br><small class="text-muted">@item.CurrentFloorPlan.FloorNumber</small>
-                                            }
-                                            @if (item.CurrentDesk != null)
-                                            {
-                                                <br><small class="text-muted">@item.CurrentDesk.DeskNumber</small>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
                                         }
                                     </td>
                                     <td>
@@ -290,6 +749,75 @@
                                         @if (item.AssetCategory != null)
                                         {
                                             <span class="badge bg-info">@item.AssetCategory.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Department))
+                                        {
+                                            <span class="badge bg-primary">@item.Department</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (item.CurrentLocation != null)
+                                        {
+                                            <span>@item.CurrentLocation.Name</span>
+                                            @if (item.CurrentFloorPlan != null)
+                                            {
+                                                <br><small class="text-muted">@item.CurrentFloorPlan.FloorNumber</small>
+                                            }
+                                            @if (item.CurrentDesk != null)
+                                            {
+                                                <br><small class="text-muted">@item.CurrentDesk.DeskNumber</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.CurrentStatus != null)
+                                        {
+                                            <span class="badge" style="background-color: @item.CurrentStatus.Color; color: white;">
+                                                @item.CurrentStatus.Name
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Unknown</span>
+                                        }
+                                        @if (item.IsCheckedOut)
+                                        {
+                                            <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Checked Out</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Computer_Name))
+                                        {
+                                            <span class="badge bg-secondary">@item.Computer_Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Model))
+                                        {
+                                            <span>@item.Model</span>
+                                            @if (!string.IsNullOrEmpty(item.Manufacturer))
+                                            {
+                                                <br><small class="text-muted">@item.Manufacturer</small>
+                                            }
                                         }
                                         else
                                         {
@@ -349,6 +877,31 @@
                         </div>
                     </div>
                     
+                    <!-- Active Filters Display -->
+                    @if (!string.IsNullOrEmpty(ViewData["CategoryFilter"]?.ToString()) || 
+                         !string.IsNullOrEmpty(ViewData["StatusFilter"]?.ToString()) || 
+                         !string.IsNullOrEmpty(ViewData["DepartmentFilter"]?.ToString()))
+                    {
+                        <div class="mt-2">
+                            <small class="text-muted">Active filters:</small>
+                            @if (!string.IsNullOrEmpty(ViewData["CategoryFilter"]?.ToString()))
+                            {
+                                <span class="badge bg-info me-1">Category: @ViewData["CategoryFilter"]</span>
+                            }
+                            @if (!string.IsNullOrEmpty(ViewData["StatusFilter"]?.ToString()))
+                            {
+                                <span class="badge bg-success me-1">Status: @ViewData["StatusFilter"]</span>
+                            }
+                            @if (!string.IsNullOrEmpty(ViewData["DepartmentFilter"]?.ToString()))
+                            {
+                                <span class="badge bg-primary me-1">Unit: @ViewData["DepartmentFilter"]</span>
+                            }
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-sm ms-2">
+                                <i class="bi bi-x-circle"></i> Clear All Filters
+                            </a>
+                        </div>
+                    }
+                    
                     @if (Model.TotalPages > 1)
                     {
                         <nav aria-label="Equipment pagination">
@@ -357,7 +910,7 @@
                                 @if (Model.PageIndex > 3)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="1">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="1">
                                             <i class="bi bi-chevron-double-left"></i>
                                         </a>
                                     </li>
@@ -367,7 +920,7 @@
                                 @if (Model.PageIndex > 10)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Math.Max(1, Model.PageIndex - 10))">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Math.Max(1, Model.PageIndex - 10))">
                                             -10
                                         </a>
                                     </li>
@@ -375,7 +928,7 @@
                                 
                                 <!-- Previous Page -->
                                 <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Model.PageIndex - 1)">
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Model.PageIndex - 1)">
                                         <i class="bi bi-chevron-left"></i>
                                     </a>
                                 </li>
@@ -384,13 +937,13 @@
                                 @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
                                 {
                                     <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@i">@i</a>
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@i">@i</a>
                                     </li>
                                 }
                                 
                                 <!-- Next Page -->
                                 <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Model.PageIndex + 1)">
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Model.PageIndex + 1)">
                                         <i class="bi bi-chevron-right"></i>
                                     </a>
                                 </li>
@@ -399,7 +952,7 @@
                                 @if (Model.PageIndex < Model.TotalPages - 9)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Math.Min(Model.TotalPages, Model.PageIndex + 10))">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@(Math.Min(Model.TotalPages, Model.PageIndex + 10))">
                                             +10
                                         </a>
                                     </li>
@@ -409,7 +962,7 @@
                                 @if (Model.PageIndex < Model.TotalPages - 2)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@Model.TotalPages">
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-pageSize="@ViewData["CurrentPageSize"]" asp-route-pageNumber="@Model.TotalPages">
                                             <i class="bi bi-chevron-double-right"></i>
                                         </a>
                                     </li>
@@ -431,6 +984,16 @@
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('pageSize', pageSize);
             currentUrl.searchParams.set('pageNumber', '1'); // Reset to first page
+            
+            // Preserve filter parameters
+            const categoryFilter = '@ViewData["CategoryFilter"]';
+            const statusFilter = '@ViewData["StatusFilter"]';
+            const departmentFilter = '@ViewData["DepartmentFilter"]';
+            
+            if (categoryFilter) currentUrl.searchParams.set('categoryFilter', categoryFilter);
+            if (statusFilter) currentUrl.searchParams.set('statusFilter', statusFilter);
+            if (departmentFilter) currentUrl.searchParams.set('departmentFilter', departmentFilter);
+            
             window.location.href = currentUrl.toString();
         });
 
@@ -543,6 +1106,32 @@
             } else if (e.key === 'Escape') {
                 searchSuggestions.style.display = 'none';
             }
+        });
+
+        // Filter dropdown items function
+        function filterDropdownItems(input, containerId) {
+            const searchTerm = input.value.toLowerCase();
+            const container = document.getElementById(containerId);
+            const items = container.querySelectorAll('.filter-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Prevent dropdown from closing when clicking on search input
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownInputs = document.querySelectorAll('.dropdown-menu input[type="text"]');
+            dropdownInputs.forEach(input => {
+                input.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
         });
     </script>
 }

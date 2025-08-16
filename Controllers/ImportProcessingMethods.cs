@@ -10,6 +10,8 @@ namespace AssetManagement.Controllers
     {
         private async Task<IActionResult> ProcessEquipmentRegistration(ExcelWorksheet worksheet, int locationId)
         {
+            // Clear previous flagged records - this will be handled by the controller
+            
             var imported = 0;
             var errors = new List<string>();
             
@@ -38,7 +40,25 @@ namespace AssetManagement.Controllers
 
                     if (existingEquipment != null)
                     {
-                        errors.Add($"Row {row}: Equipment with OATH Tag '{oathTag}' already exists - skipping");
+                        var errorMsg = $"Row {row}: Equipment with OATH Tag '{oathTag}' already exists - skipping";
+                        errors.Add(errorMsg);
+                        
+                        // Add to flagged records for review
+                        var flaggedRecord = new FlaggedRecord
+                        {
+                            RowNumber = row,
+                            OathTag = oathTag,
+                            SerialNumber = serialNumber,
+                            Model = GetCellValue(worksheet, row, headerMapping, "Model"),
+                            Manufacturer = GetCellValue(worksheet, row, headerMapping, "Manufacturer"),
+                            Category = GetCellValue(worksheet, row, headerMapping, "Category"),
+                            Unit = GetCellValue(worksheet, row, headerMapping, "Unit"),
+                            Issue = "Duplicate OATH Tag",
+                            ErrorMessage = errorMsg,
+                            ImportType = "equipment",
+                            OriginalRowData = GetOriginalRowData(worksheet, row, headerMapping)
+                        };
+                        ImportController.AddFlaggedRecord(flaggedRecord);
                         continue;
                     }
 
@@ -81,6 +101,13 @@ namespace AssetManagement.Controllers
                         var category = await _context.AssetCategories
                             .FirstOrDefaultAsync(c => c.Name.ToLower() == categoryName.ToLower());
                         equipment.AssetCategoryId = category?.Id;
+                    }
+
+                    // Set Unit (Department)
+                    var unitName = GetCellValue(worksheet, row, headerMapping, "Unit");
+                    if (!string.IsNullOrEmpty(unitName))
+                    {
+                        equipment.Department = unitName;
                     }
 
                     _context.Equipment.Add(equipment);
@@ -297,6 +324,8 @@ namespace AssetManagement.Controllers
 
         private async Task<IActionResult> ProcessFullInventoryImport(ExcelWorksheet worksheet, int locationId)
         {
+            // Clear previous flagged records - this will be handled by the controller
+            
             var imported = 0;
             var updated = 0;
             var errors = new List<string>();
@@ -315,7 +344,26 @@ namespace AssetManagement.Controllers
                 {
                     if (!excelOathTags.Add(oathTag))
                     {
-                        errors.Add($"Row {row}: Duplicate OATH Tag '{oathTag}' found within Excel file");
+                        var errorMsg = $"Row {row}: Duplicate OATH Tag '{oathTag}' found within Excel file";
+                        errors.Add(errorMsg);
+                        
+                        // Add to flagged records for review
+                        var flaggedRecord = new FlaggedRecord
+                        {
+                            RowNumber = row,
+                            OathTag = oathTag,
+                            SerialNumber = GetCellValue(worksheet, row, headerMapping, "Serial Number"),
+                            Model = GetCellValue(worksheet, row, headerMapping, "Model"),
+                            Manufacturer = GetCellValue(worksheet, row, headerMapping, "Manufacturer"),
+                            Category = GetCellValue(worksheet, row, headerMapping, "Category"),
+                            Status = GetCellValue(worksheet, row, headerMapping, "Status"),
+                            Unit = GetCellValue(worksheet, row, headerMapping, "Unit"),
+                            Issue = "Duplicate OATH Tag in Excel",
+                            ErrorMessage = errorMsg,
+                            ImportType = "inventory",
+                            OriginalRowData = GetOriginalRowData(worksheet, row, headerMapping)
+                        };
+                        ImportController.AddFlaggedRecord(flaggedRecord);
                     }
                 }
             }
@@ -362,17 +410,18 @@ namespace AssetManagement.Controllers
                     // Update basic equipment info
                     equipment.Model = worksheet.Cells[row, 3].Value?.ToString()?.Trim();
                     equipment.Manufacturer = worksheet.Cells[row, 4].Value?.ToString()?.Trim();
-                    equipment.Notes = worksheet.Cells[row, 23].Value?.ToString()?.Trim(); // Notes moved to column 23
+                    equipment.Department = worksheet.Cells[row, 7].Value?.ToString()?.Trim(); // Unit field
+                    equipment.Notes = worksheet.Cells[row, 24].Value?.ToString()?.Trim(); // Notes moved to column 24
                     equipment.UpdatedAt = DateTime.UtcNow;
 
                     // Parse dates and costs
-                    if (DateTime.TryParse(worksheet.Cells[row, 7].Value?.ToString(), out DateTime purchaseDate))
+                    if (DateTime.TryParse(worksheet.Cells[row, 8].Value?.ToString(), out DateTime purchaseDate))
                         equipment.Purchase_Date = purchaseDate;
 
-                    if (decimal.TryParse(worksheet.Cells[row, 8].Value?.ToString()?.Replace("$", ""), out decimal cost))
+                    if (decimal.TryParse(worksheet.Cells[row, 9].Value?.ToString()?.Replace("$", ""), out decimal cost))
                         equipment.Purchase_Cost = cost;
 
-                    if (DateTime.TryParse(worksheet.Cells[row, 9].Value?.ToString(), out DateTime warrantyExpiry))
+                    if (DateTime.TryParse(worksheet.Cells[row, 10].Value?.ToString(), out DateTime warrantyExpiry))
                         equipment.Warranty_Expiry = warrantyExpiry;
 
                     // Handle category, status, and assignments
@@ -473,17 +522,39 @@ namespace AssetManagement.Controllers
 
         private async Task HandleUserAssignment(Equipment equipment, ExcelWorksheet worksheet, int row)
         {
-            var userEmail = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
-            if (!string.IsNullOrEmpty(userEmail))
+            var headerMapping = CreateHeaderMapping(worksheet);
+            
+            var userEmail = GetCellValue(worksheet, row, headerMapping, "Assigned User Email");
+            var userName = GetCellValue(worksheet, row, headerMapping, "Assigned User Name");
+            
+            // If we have a user name (even without email), process the assignment
+            if (!string.IsNullOrEmpty(userName))
             {
-                var user = await _context.EntraUsers
-                    .FirstOrDefaultAsync(u => u.Mail == userEmail || u.UserPrincipalName == userEmail);
-                
-                if (user != null)
+                // If we have an email, try to find the user in Entra
+                if (!string.IsNullOrEmpty(userEmail))
                 {
-                    equipment.AssignedEntraUserId = user.Id;
-                    equipment.Assigned_User_Email = user.Mail;
-                    equipment.Assigned_User_Name = user.DisplayName;
+                    var user = await _context.EntraUsers
+                        .FirstOrDefaultAsync(u => u.Mail == userEmail || u.UserPrincipalName == userEmail);
+                    
+                    if (user != null)
+                    {
+                        // User found in Entra - use Entra data
+                        equipment.AssignedEntraUserId = user.Id;
+                        equipment.Assigned_User_Email = user.Mail;
+                        equipment.Assigned_User_Name = user.DisplayName;
+                    }
+                    else
+                    {
+                        // User not found in Entra - use Excel data directly
+                        equipment.Assigned_User_Email = userEmail;
+                        equipment.Assigned_User_Name = userName;
+                    }
+                }
+                else
+                {
+                    // No email provided - use Excel name with "No email on file"
+                    equipment.Assigned_User_Email = "No email on file";
+                    equipment.Assigned_User_Name = userName;
                 }
             }
         }
@@ -537,9 +608,9 @@ namespace AssetManagement.Controllers
 
         private Task HandleTechnologyConfiguration(Equipment equipment, ExcelWorksheet worksheet, int row)
         {
-            var netName = worksheet.Cells[row, 15].Value?.ToString()?.Trim();
-            var ipv4 = worksheet.Cells[row, 16].Value?.ToString()?.Trim();
-            var mac = worksheet.Cells[row, 17].Value?.ToString()?.Trim();
+            var netName = worksheet.Cells[row, 16].Value?.ToString()?.Trim();
+            var ipv4 = worksheet.Cells[row, 17].Value?.ToString()?.Trim();
+            var mac = worksheet.Cells[row, 18].Value?.ToString()?.Trim();
 
             if (!string.IsNullOrEmpty(netName) || !string.IsNullOrEmpty(ipv4) || !string.IsNullOrEmpty(mac))
             {
@@ -556,11 +627,11 @@ namespace AssetManagement.Controllers
                 equipment.Computer_Name = netName;  // Computer_Name maps to what was "Net Name"
                 equipment.IP_Address = ipv4;       // IP_Address maps to IPv4
                 config.MACAddress = mac;
-                config.WallPort = worksheet.Cells[row, 18].Value?.ToString()?.Trim();
-                config.SwitchName = worksheet.Cells[row, 19].Value?.ToString()?.Trim();
-                config.SwitchPort = worksheet.Cells[row, 20].Value?.ToString()?.Trim();
-                equipment.Phone_Number = worksheet.Cells[row, 21].Value?.ToString()?.Trim();
-                config.ConfigurationNotes = worksheet.Cells[row, 22].Value?.ToString()?.Trim();
+                config.WallPort = worksheet.Cells[row, 19].Value?.ToString()?.Trim();
+                config.SwitchName = worksheet.Cells[row, 20].Value?.ToString()?.Trim();
+                config.SwitchPort = worksheet.Cells[row, 21].Value?.ToString()?.Trim();
+                equipment.Phone_Number = worksheet.Cells[row, 22].Value?.ToString()?.Trim();
+                config.ConfigurationNotes = worksheet.Cells[row, 23].Value?.ToString()?.Trim();
                 config.LastUpdated = DateTime.UtcNow;
             }
             
@@ -606,6 +677,8 @@ namespace AssetManagement.Controllers
                         mapping["IMEI"] = col;
                     if (normalizedHeader.Equals("SIM Card Number", StringComparison.OrdinalIgnoreCase))
                         mapping["SIMCardNumber"] = col;
+                    if (normalizedHeader.Equals("Unit", StringComparison.OrdinalIgnoreCase))
+                        mapping["Unit"] = col;
                 }
             }
             
@@ -619,6 +692,24 @@ namespace AssetManagement.Controllers
                 return worksheet.Cells[row, col].Value?.ToString()?.Trim() ?? "";
             }
             return "";
+        }
+
+        private Dictionary<string, object> GetOriginalRowData(ExcelWorksheet worksheet, int row, Dictionary<string, int> headerMapping)
+        {
+            var rowData = new Dictionary<string, object>();
+            
+            // Get all column headers and their values
+            for (int col = 1; col <= worksheet.Dimension.Columns; col++)
+            {
+                var header = worksheet.Cells[1, col].Value?.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(header))
+                {
+                    var value = worksheet.Cells[row, col].Value?.ToString()?.Trim() ?? "";
+                    rowData[header] = value;
+                }
+            }
+            
+            return rowData;
         }
     }
 }

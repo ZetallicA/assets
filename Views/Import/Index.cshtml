@@ -39,6 +39,29 @@
                             @TempData["ImportError"]
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
+                        
+                        <!-- Show Review Flagged Records Button -->
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Review Required:</strong> Some records were flagged for review due to errors or duplicates.
+                            <button type="button" class="btn btn-primary btn-sm ms-3" onclick="showFlaggedRecordsReview()">
+                                <i class="fas fa-eye me-1"></i>
+                                Review Flagged Records
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm ms-2" onclick="debugFlaggedRecords()">
+                                <i class="fas fa-bug me-1"></i>
+                                Debug Records
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm ms-2" onclick="testRightClick()">
+                                <i class="fas fa-mouse-pointer me-1"></i>
+                                Test Right-Click
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm ms-2" onclick="clearFlaggedRecords()">
+                                <i class="fas fa-trash me-1"></i>
+                                Clear Records
+                            </button>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     }
 
                     @if (TempData["ImportInfo"] != null)
@@ -362,6 +385,144 @@
     </div>
 </div>
 
+<!-- Flagged Records Review Section -->
+<div id="flaggedRecordsSection" class="row mt-4" style="display: none;">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Review Flagged Records
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Instructions:</strong> 
+                    <ul class="mb-0 mt-2">
+                        <li>Use checkboxes to select multiple records for batch operations</li>
+                        <li>Double-click on any cell to edit values</li>
+                        <li>Right-click on any cell for additional options (Edit Value, Randomize This Field, Randomize OATH Tag, Randomize Serial Number)</li>
+                        <li>Randomize options will generate unique values for quick fixes</li>
+                        <li>Use "Randomize Selected" dropdown to batch-randomize OATH Tags, Serial Numbers, or both</li>
+                        <li>Use "Remove Selected" to batch-remove multiple records</li>
+                        <li>Fix the flagged records and download the corrected Excel file for re-import</li>
+                    </ul>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="flaggedRecordsTable" class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" title="Select/Deselect All">
+                                </th>
+                                <th>Row #</th>
+                                <th>OATH Tag</th>
+                                <th>Serial Number</th>
+                                <th>Model</th>
+                                <th>Manufacturer</th>
+                                <th>Category</th>
+                                <th>Unit</th>
+                                <th>Status</th>
+                                <th>Issue</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="flaggedRecordsTableBody">
+                            <!-- Flagged records will be loaded here via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-success" onclick="downloadCorrectedExcel()">
+                                <i class="fas fa-download me-2"></i>
+                                Download Corrected Excel File
+                            </button>
+                            <button type="button" class="btn btn-secondary ms-2" onclick="hideFlaggedRecordsReview()">
+                                <i class="fas fa-times me-2"></i>
+                                Hide Review
+                            </button>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="btn-group me-2" role="group">
+                                <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" id="batchRandomizeBtn" disabled>
+                                    <i class="fas fa-random me-2"></i>
+                                    Randomize Selected
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="randomizeSelectedRecords('oathTag')">
+                                        <i class="fas fa-tag me-2"></i>Randomize OATH Tags
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="randomizeSelectedRecords('serialNumber')">
+                                        <i class="fas fa-barcode me-2"></i>Randomize Serial Numbers
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" onclick="randomizeSelectedRecords('both')">
+                                        <i class="fas fa-random me-2"></i>Randomize Both
+                                    </a></li>
+                                </ul>
+                            </div>
+                            <button type="button" class="btn btn-info" onclick="removeSelectedRecords()" id="batchRemoveBtn" disabled>
+                                <i class="fas fa-trash me-2"></i>
+                                Remove Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .editable-field {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .editable-field:hover {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 3px;
+    }
+    
+    .editable-field::after {
+        content: "✏️";
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        font-size: 10px;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    .editable-field:hover::after {
+        opacity: 1;
+    }
+    
+    #contextMenu {
+        min-width: 200px;
+    }
+    
+    #contextMenu .dropdown-item {
+        padding: 8px 16px;
+        cursor: pointer;
+    }
+    
+    #contextMenu .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    #contextMenu .dropdown-item i {
+        width: 16px;
+        text-align: center;
+    }
+</style>
+
 @section Scripts {
     <script>
         // File input validation
@@ -409,45 +570,83 @@
         // Initialize form on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateFormForImportType();
+            
+            // Handle context menu on editable fields
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.classList.contains('editable-field')) {
+                    console.log('Context menu triggered on editable field:', e.target);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showContextMenu(e, e.target);
+                }
+            });
         });
 
-        // Duplicate review functionality
-        let duplicateRecords = [];
+        // Flagged records review functionality
+        let flaggedRecords = [];
 
-        function showDuplicateReview() {
-            // Load duplicate records from server
+        function showFlaggedRecordsReview() {
+            console.log('showFlaggedRecordsReview called');
+            // Load flagged records from server
             fetch('@Url.Action("GetDuplicateRecords")')
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
-                    duplicateRecords = data;
-                    populateDuplicateTable(data);
-                    document.getElementById('duplicateReviewSection').style.display = 'block';
-                    document.getElementById('duplicateReviewSection').scrollIntoView({ behavior: 'smooth' });
+                    console.log('Flagged records data:', data);
+                    flaggedRecords = data.flaggedRecords || [];
+                    if (flaggedRecords && flaggedRecords.length > 0) {
+                        populateFlaggedRecordsTable(flaggedRecords);
+                        document.getElementById('flaggedRecordsSection').style.display = 'block';
+                        console.log('Flagged records section displayed with', flaggedRecords.length, 'records');
+                    } else {
+                        alert('No flagged records found. All records were processed successfully.');
+                    }
                 })
                 .catch(error => {
-                    console.error('Error loading duplicate records:', error);
-                    alert('Error loading duplicate records. Please try again.');
+                    console.error('Error loading flagged records:', error);
+                    alert('Error loading flagged records. Please try again.');
                 });
         }
 
-        function hideDuplicateReview() {
-            document.getElementById('duplicateReviewSection').style.display = 'none';
+        function hideFlaggedRecordsReview() {
+            document.getElementById('flaggedRecordsSection').style.display = 'none';
         }
 
-        function populateDuplicateTable(records) {
-            const tbody = document.getElementById('duplicateTableBody');
+        function populateFlaggedRecordsTable(records) {
+            console.log('Populating flagged records table with:', records);
+            const tbody = document.getElementById('flaggedRecordsTableBody');
             tbody.innerHTML = '';
 
             records.forEach((record, index) => {
+                if (index === 0) {
+                    console.log('First record structure:', Object.keys(record));
+                    console.log('First record values:', record);
+                }
+                console.log('Processing record', index, ':', record);
+                
+                // Test right-click functionality on first record
+                if (index === 0) {
+                    console.log('Adding test right-click to first record');
+                }
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${record.rowNumber}</td>
-                    <td class="editable" data-field="oathTag" data-index="${index}" ondblclick="editCell(this)">${record.oathTag}</td>
-                    <td class="editable" data-field="serialNumber" data-index="${index}" ondblclick="editCell(this)">${record.serialNumber}</td>
-                    <td><span class="badge bg-warning text-dark">${record.reason}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="removeRecord(${index})">
-                            <i class="fas fa-trash"></i> Remove
+                        <input type="checkbox" class="record-checkbox" data-index="${index}" onchange="updateSelectAllState()">
+                    </td>
+                    <td>${record.rowNumber}</td>
+                    <td class="editable-field" data-index="${index}" data-field="oathTag" ondblclick="editCell(this)">${record.oathTag || ''}</td>
+                    <td class="editable-field" data-index="${index}" data-field="serialNumber" ondblclick="editCell(this)">${record.serialNumber || ''}</td>
+                    <td class="editable-field" data-index="${index}" data-field="model" ondblclick="editCell(this)">${record.model || ''}</td>
+                    <td class="editable-field" data-index="${index}" data-field="manufacturer" ondblclick="editCell(this)">${record.manufacturer || ''}</td>
+                    <td class="editable-field" data-index="${index}" data-field="category" ondblclick="editCell(this)">${record.category || ''}</td>
+                    <td class="editable-field" data-index="${index}" data-field="unit" ondblclick="editCell(this)">${record.unit || ''}</td>
+                    <td class="editable-field" data-index="${index}" data-field="status" ondblclick="editCell(this)">${record.status || ''}</td>
+                    <td><span class="badge bg-warning">${record.issue || ''}</span></td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeFlaggedRecord(${index})">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 `;
@@ -456,7 +655,7 @@
         }
 
         function editCell(cell) {
-            const currentValue = cell.textContent;
+            const currentValue = cell.textContent.trim();
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentValue;
@@ -467,8 +666,17 @@
                 const index = parseInt(cell.getAttribute('data-index'));
                 const field = cell.getAttribute('data-field');
                 
-                // Update the record
-                duplicateRecords[index][field] = newValue;
+                console.log('Editing field:', field, 'at index:', index, 'new value:', newValue);
+                console.log('Current flaggedRecords:', flaggedRecords);
+                
+                // Check if the record and field exist
+                if (flaggedRecords[index] && typeof flaggedRecords[index] === 'object') {
+                    // Update the record
+                    flaggedRecords[index][field] = newValue;
+                    console.log('Updated record:', flaggedRecords[index]);
+                } else {
+                    console.error('Cannot update: flaggedRecords[' + index + '] is not available');
+                }
                 
                 // Update the cell
                 cell.textContent = newValue;
@@ -486,45 +694,360 @@
             input.select();
         }
 
-        function removeRecord(index) {
-            if (confirm('Are you sure you want to remove this duplicate record?')) {
-                duplicateRecords.splice(index, 1);
-                populateDuplicateTable(duplicateRecords);
+        function randomizeUniqueValue(cell) {
+            const randomNumber = Math.floor(Math.random() * 90000) + 10000; // Random number between 10000-99999
+            const field = cell.getAttribute('data-field');
+            
+            // Use different prefixes based on field type
+            let newValue;
+            if (field === 'serialNumber') {
+                newValue = `SN-RE-ENTER-${randomNumber}`;
+            } else {
+                newValue = `Plz-re-enter-${randomNumber}`;
+            }
+            
+            const index = parseInt(cell.getAttribute('data-index'));
+            
+            console.log('Randomizing field:', field, 'at index:', index, 'new value:', newValue);
+            
+            // Check if the record and field exist
+            if (flaggedRecords[index] && typeof flaggedRecords[index] === 'object') {
+                // Update the record
+                flaggedRecords[index][field] = newValue;
+                console.log('Updated record with random value:', flaggedRecords[index]);
+            } else {
+                console.error('Cannot update: flaggedRecords[' + index + '] is not available');
+            }
+            
+            // Update the cell
+            cell.textContent = newValue;
+        }
+
+        function showContextMenu(event, cell) {
+            console.log('showContextMenu called for cell:', cell);
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Remove any existing context menu
+            const existingMenu = document.getElementById('contextMenu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+            
+            // Create context menu
+            const contextMenu = document.createElement('div');
+            contextMenu.id = 'contextMenu';
+            contextMenu.className = 'dropdown-menu show position-fixed';
+            contextMenu.style.cssText = `
+                position: fixed;
+                left: ${event.clientX}px;
+                top: ${event.clientY}px;
+                z-index: 9999;
+                background: white;
+                border: 2px solid #007bff;
+                border-radius: 4px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                padding: 0;
+                margin: 0;
+                min-width: 200px;
+                display: block !important;
+                color: black;
+                font-size: 14px;
+            `;
+            
+            // Add menu items
+            const editItem = document.createElement('a');
+            editItem.className = 'dropdown-item';
+            editItem.href = '#';
+            editItem.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Value';
+            editItem.style.cssText = `
+                display: block;
+                padding: 8px 16px;
+                color: #333;
+                text-decoration: none;
+                cursor: pointer;
+                border-bottom: 1px solid #eee;
+            `;
+            editItem.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Edit Value clicked');
+                editCell(cell);
+                contextMenu.remove();
+            };
+            
+            const randomizeItem = document.createElement('a');
+            randomizeItem.className = 'dropdown-item';
+            randomizeItem.href = '#';
+            randomizeItem.innerHTML = '<i class="fas fa-random me-2"></i>Randomize This Field';
+            randomizeItem.style.cssText = `
+                display: block;
+                padding: 8px 16px;
+                color: #333;
+                text-decoration: none;
+                cursor: pointer;
+                border-bottom: 1px solid #eee;
+            `;
+            randomizeItem.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Randomize This Field clicked');
+                randomizeUniqueValue(cell);
+                contextMenu.remove();
+            };
+
+            const randomizeOathTagItem = document.createElement('a');
+            randomizeOathTagItem.className = 'dropdown-item';
+            randomizeOathTagItem.href = '#';
+            randomizeOathTagItem.innerHTML = '<i class="fas fa-tag me-2"></i>Randomize OATH Tag';
+            randomizeOathTagItem.style.cssText = `
+                display: block;
+                padding: 8px 16px;
+                color: #333;
+                text-decoration: none;
+                cursor: pointer;
+                border-bottom: 1px solid #eee;
+            `;
+            randomizeOathTagItem.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Randomize OATH Tag clicked');
+                const oathTagCell = document.querySelector(`td[data-index="${cell.getAttribute('data-index')}"][data-field="oathTag"]`);
+                if (oathTagCell) {
+                    randomizeUniqueValue(oathTagCell);
+                }
+                contextMenu.remove();
+            };
+
+            const randomizeSerialItem = document.createElement('a');
+            randomizeSerialItem.className = 'dropdown-item';
+            randomizeSerialItem.href = '#';
+            randomizeSerialItem.innerHTML = '<i class="fas fa-barcode me-2"></i>Randomize Serial Number';
+            randomizeSerialItem.style.cssText = `
+                display: block;
+                padding: 8px 16px;
+                color: #333;
+                text-decoration: none;
+                cursor: pointer;
+            `;
+            randomizeSerialItem.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Randomize Serial Number clicked');
+                const serialNumberCell = document.querySelector(`td[data-index="${cell.getAttribute('data-index')}"][data-field="serialNumber"]`);
+                if (serialNumberCell) {
+                    randomizeUniqueValue(serialNumberCell);
+                }
+                contextMenu.remove();
+            };
+            
+            contextMenu.appendChild(editItem);
+            contextMenu.appendChild(randomizeItem);
+            contextMenu.appendChild(randomizeOathTagItem);
+            contextMenu.appendChild(randomizeSerialItem);
+            document.body.appendChild(contextMenu);
+            
+            console.log('Context menu created and added to DOM');
+            console.log('Menu position:', event.clientX, event.clientY);
+            console.log('Menu element:', contextMenu);
+            console.log('Menu items count:', contextMenu.children.length);
+            
+            // Close menu when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!contextMenu.contains(e.target)) {
+                        contextMenu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 100);
+        }
+
+        function removeFlaggedRecord(index) {
+            if (confirm('Are you sure you want to remove this flagged record?')) {
+                flaggedRecords.splice(index, 1);
+                populateFlaggedRecordsTable(flaggedRecords);
+            }
+        }
+
+        function debugFlaggedRecords() {
+            fetch('@Url.Action("DebugFlaggedRecords")')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Debug info:', data);
+                    if (data.count === 0) {
+                        alert('No flagged records found. Import a file first to see real data.');
+                    } else {
+                        alert(`Found ${data.count} flagged records.\n\nHeaders: ${data.firstRecordHeaders.join(', ')}\n\nFirst record data: ${JSON.stringify(data.firstRecordData, null, 2)}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error debugging flagged records:', error);
+                    alert('Error debugging flagged records.');
+                });
+        }
+
+        function clearFlaggedRecords() {
+            if (confirm('Are you sure you want to clear all flagged records?')) {
+                fetch('@Url.Action("ClearFlaggedRecords")')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Flagged records cleared:', data);
+                        alert('Flagged records cleared.');
+                        // Hide the flagged records section
+                        document.getElementById('flaggedRecordsSection').style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error clearing flagged records:', error);
+                        alert('Error clearing flagged records.');
+                    });
+            }
+        }
+
+        function testRightClick() {
+            console.log('Testing right-click functionality...');
+            
+            // Create a test cell element
+            const testCell = document.createElement('td');
+            testCell.className = 'editable-field';
+            testCell.setAttribute('data-index', '0');
+            testCell.setAttribute('data-field', 'oathTag');
+            testCell.textContent = 'TEST123';
+            
+            // Simulate right-click event
+            const testEvent = new MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                clientX: 100,
+                clientY: 100
+            });
+            
+            console.log('Simulating right-click on test cell');
+            showContextMenu(testEvent, testCell);
+        }
+
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.record-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            updateBatchButtons();
+        }
+
+        function updateSelectAllState() {
+            const checkboxes = document.querySelectorAll('.record-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const totalCount = checkboxes.length;
+            
+            if (checkedCount === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === totalCount) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+            
+            updateBatchButtons();
+        }
+
+        function updateBatchButtons() {
+            const checkboxes = document.querySelectorAll('.record-checkbox:checked');
+            const batchRandomizeBtn = document.getElementById('batchRandomizeBtn');
+            const batchRemoveBtn = document.getElementById('batchRemoveBtn');
+            
+            const hasSelection = checkboxes.length > 0;
+            batchRandomizeBtn.disabled = !hasSelection;
+            batchRemoveBtn.disabled = !hasSelection;
+        }
+
+        function getSelectedRecordIndices() {
+            const checkboxes = document.querySelectorAll('.record-checkbox:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index')));
+        }
+
+        function randomizeSelectedRecords(fieldType = 'oathTag') {
+            const selectedIndices = getSelectedRecordIndices();
+            if (selectedIndices.length === 0) {
+                alert('Please select at least one record to randomize.');
+                return;
+            }
+            
+            let fieldName, confirmMessage;
+            switch (fieldType) {
+                case 'oathTag':
+                    fieldName = 'OATH Tags';
+                    confirmMessage = `Randomize OATH Tags for ${selectedIndices.length} selected record(s)?`;
+                    break;
+                case 'serialNumber':
+                    fieldName = 'Serial Numbers';
+                    confirmMessage = `Randomize Serial Numbers for ${selectedIndices.length} selected record(s)?`;
+                    break;
+                case 'both':
+                    fieldName = 'OATH Tags and Serial Numbers';
+                    confirmMessage = `Randomize both OATH Tags and Serial Numbers for ${selectedIndices.length} selected record(s)?`;
+                    break;
+                default:
+                    fieldName = 'OATH Tags';
+                    confirmMessage = `Randomize OATH Tags for ${selectedIndices.length} selected record(s)?`;
+            }
+            
+            if (confirm(confirmMessage)) {
+                selectedIndices.forEach(index => {
+                    if (fieldType === 'oathTag' || fieldType === 'both') {
+                        const oathTagCell = document.querySelector(`td[data-index="${index}"][data-field="oathTag"]`);
+                        if (oathTagCell) {
+                            randomizeUniqueValue(oathTagCell);
+                        }
+                    }
+                    
+                    if (fieldType === 'serialNumber' || fieldType === 'both') {
+                        const serialNumberCell = document.querySelector(`td[data-index="${index}"][data-field="serialNumber"]`);
+                        if (serialNumberCell) {
+                            randomizeUniqueValue(serialNumberCell);
+                        }
+                    }
+                });
+                
+                // Uncheck all after operation
+                document.getElementById('selectAll').checked = false;
+                document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = false);
+                updateBatchButtons();
+            }
+        }
+
+        function removeSelectedRecords() {
+            const selectedIndices = getSelectedRecordIndices();
+            if (selectedIndices.length === 0) {
+                alert('Please select at least one record to remove.');
+                return;
+            }
+            
+            if (confirm(`Remove ${selectedIndices.length} selected record(s)?`)) {
+                // Remove in reverse order to maintain indices
+                selectedIndices.sort((a, b) => b - a).forEach(index => {
+                    removeFlaggedRecord(index);
+                });
+                
+                // Uncheck all after operation
+                document.getElementById('selectAll').checked = false;
+                document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = false);
+                updateBatchButtons();
             }
         }
 
         function downloadCorrectedExcel() {
-            if (duplicateRecords.length === 0) {
+            if (flaggedRecords.length === 0) {
                 alert('No records to download.');
                 return;
             }
-
-            // Collect current values from the table (including user edits)
-            const correctedRecords = [];
-            const tableRows = document.querySelectorAll('#duplicateTableBody tr');
-            
-            tableRows.forEach((row, index) => {
-                if (index < duplicateRecords.length) {
-                    const cells = row.querySelectorAll('td');
-                    const correctedRecord = {
-                        RowNumber: duplicateRecords[index].rowNumber,
-                        OathTag: cells[1].textContent.trim(), // Get current OATH Tag value (may be edited)
-                        SerialNumber: cells[2].textContent.trim(), // Get current Serial Number value (may be edited)
-                        Reason: duplicateRecords[index].reason,
-                        OriginalRowData: duplicateRecords[index].originalRowData || {}
-                    };
-                    correctedRecords.push(correctedRecord);
-                }
-            });
-
-            console.log('Original duplicateRecords:', duplicateRecords);
-            console.log('Sending corrected records:', correctedRecords);
-            
-            // Debug: Show what we're collecting from each table cell
-            tableRows.forEach((row, index) => {
-                const cells = row.querySelectorAll('td');
-                console.log(`Row ${index}: OATH Tag = "${cells[1].textContent.trim()}", Serial = "${cells[2].textContent.trim()}"`);
-            });
 
             // Send corrected records to server for Excel generation
             fetch('@Url.Action("GenerateCorrectedExcel")', {
@@ -533,7 +1056,7 @@
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                 },
-                body: JSON.stringify(correctedRecords)
+                body: JSON.stringify(flaggedRecords)
             })
             .then(response => {
                 if (response.ok) {
@@ -545,7 +1068,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'corrected_duplicates.xlsx';
+                a.download = 'corrected_flagged_records.xlsx';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
