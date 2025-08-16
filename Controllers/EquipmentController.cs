@@ -17,7 +17,8 @@ namespace AssetManagement.Controllers
         // GET: Equipment
         public async Task<IActionResult> Index(string searchString, string sortOrder, int? pageNumber, int? pageSize, 
             string? categoryFilter, string? statusFilter, string? departmentFilter, 
-            string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? floorFilter, string? netNameFilter, string? modelFilter, string? serialNumberFilter)
+            string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? floorFilter, string? netNameFilter, string? modelFilter, string? serialNumberFilter,
+            string? deskNumberFilter, string? manufacturerFilter, string? purchaseDateFilter)
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["OATHTagSortParm"] = String.IsNullOrEmpty(sortOrder) ? "oath_tag_desc" : "";
@@ -30,6 +31,9 @@ namespace AssetManagement.Controllers
             ViewData["CategorySortParm"] = sortOrder == "category" ? "category_desc" : "category";
             ViewData["DepartmentSortParm"] = sortOrder == "department" ? "department_desc" : "department";
             ViewData["SerialNumberSortParm"] = sortOrder == "serialnumber" ? "serialnumber_desc" : "serialnumber";
+            ViewData["DeskNumberSortParm"] = sortOrder == "desknumber" ? "desknumber_desc" : "desknumber";
+            ViewData["ManufacturerSortParm"] = sortOrder == "manufacturer" ? "manufacturer_desc" : "manufacturer";
+            ViewData["PurchaseDateSortParm"] = sortOrder == "purchasedate" ? "purchasedate_desc" : "purchasedate";
             ViewData["CurrentFilter"] = searchString;
             ViewData["CategoryFilter"] = categoryFilter;
             ViewData["StatusFilter"] = statusFilter;
@@ -41,6 +45,9 @@ namespace AssetManagement.Controllers
             ViewData["NetNameFilter"] = netNameFilter;
             ViewData["ModelFilter"] = modelFilter;
             ViewData["SerialNumberFilter"] = serialNumberFilter;
+            ViewData["DeskNumberFilter"] = deskNumberFilter;
+            ViewData["ManufacturerFilter"] = manufacturerFilter;
+            ViewData["PurchaseDateFilter"] = purchaseDateFilter;
             
             // Page size options
             var pageSizeOptions = new List<int> { 10, 25, 50, 100 };
@@ -136,6 +143,24 @@ namespace AssetManagement.Controllers
                 equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Serial_Number) && e.Serial_Number == serialNumberFilter);
             }
 
+            // Apply Desk Number filter
+            if (!String.IsNullOrEmpty(deskNumberFilter))
+            {
+                equipment = equipment.Where(e => e.CurrentDesk != null && e.CurrentDesk.DeskName == deskNumberFilter);
+            }
+
+            // Apply Manufacturer filter
+            if (!String.IsNullOrEmpty(manufacturerFilter))
+            {
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Manufacturer) && e.Manufacturer == manufacturerFilter);
+            }
+
+            // Apply Purchase Date filter
+            if (!String.IsNullOrEmpty(purchaseDateFilter))
+            {
+                equipment = equipment.Where(e => e.PurchaseDate.HasValue && e.PurchaseDate.Value.ToString("MM/dd/yyyy") == purchaseDateFilter);
+            }
+
 
 
             equipment = sortOrder switch
@@ -159,6 +184,12 @@ namespace AssetManagement.Controllers
                 "department_desc" => equipment.OrderByDescending(e => e.Department),
                 "serialnumber" => equipment.OrderBy(e => e.Serial_Number),
                 "serialnumber_desc" => equipment.OrderByDescending(e => e.Serial_Number),
+                "desknumber" => equipment.OrderBy(e => e.CurrentDesk != null ? e.CurrentDesk.DeskName : ""),
+                "desknumber_desc" => equipment.OrderByDescending(e => e.CurrentDesk != null ? e.CurrentDesk.DeskName : ""),
+                "manufacturer" => equipment.OrderBy(e => e.Manufacturer),
+                "manufacturer_desc" => equipment.OrderByDescending(e => e.Manufacturer),
+                "purchasedate" => equipment.OrderBy(e => e.PurchaseDate),
+                "purchasedate_desc" => equipment.OrderByDescending(e => e.PurchaseDate),
                 _ => equipment.OrderBy(e => e.OATH_Tag),
             };
 
@@ -242,6 +273,106 @@ namespace AssetManagement.Controllers
                 .Select(e => e.Serial_Number)
                 .Distinct()
                 .OrderBy(s => s)
+                .ToListAsync();
+
+            // Get Desk Number options
+            ViewData["DeskNumberOptions"] = await _context.Equipment
+                .Where(e => e.CurrentDesk != null && !String.IsNullOrEmpty(e.CurrentDesk.DeskName))
+                .Select(e => e.CurrentDesk.DeskName)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+
+            // Get Manufacturer options
+            ViewData["ManufacturerOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Manufacturer))
+                .Select(e => e.Manufacturer)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToListAsync();
+
+            // Get Purchase Date options
+            var purchaseDates = await _context.Equipment
+                .Where(e => e.PurchaseDate.HasValue)
+                .Select(e => e.PurchaseDate.Value)
+                .Distinct()
+                .OrderBy(p => p)
+                .ToListAsync();
+            
+            ViewData["PurchaseDateOptions"] = purchaseDates
+                .Select(d => d.ToString("MM/dd/yyyy"))
+                .ToList();
+
+            // Get Asset Tag options
+            ViewData["AssetTagOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Asset_Tag))
+                .Select(e => e.Asset_Tag)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToListAsync();
+
+            // Get Service Tag options
+            ViewData["ServiceTagOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Service_Tag))
+                .Select(e => e.Service_Tag)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+
+            // Get IP Address options
+            ViewData["IPAddressOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.IP_Address))
+                .Select(e => e.IP_Address)
+                .Distinct()
+                .OrderBy(i => i)
+                .ToListAsync();
+
+            // Get OS Version options
+            ViewData["OSVersionOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.OS_Version))
+                .Select(e => e.OS_Version)
+                .Distinct()
+                .OrderBy(o => o)
+                .ToListAsync();
+
+            // Get Phone Number options
+            ViewData["PhoneNumberOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Phone_Number))
+                .Select(e => e.Phone_Number)
+                .Distinct()
+                .OrderBy(p => p)
+                .ToListAsync();
+
+            // Get Purchase Price options
+            var purchasePrices = await _context.Equipment
+                .Where(e => e.PurchasePrice.HasValue)
+                .Select(e => e.PurchasePrice.Value)
+                .Distinct()
+                .OrderBy(p => p)
+                .ToListAsync();
+            
+            ViewData["PurchasePriceOptions"] = purchasePrices
+                .Select(p => p.ToString("C"))
+                .ToList();
+
+            // Get Warranty End options
+            var warrantyEndDates = await _context.Equipment
+                .Where(e => e.WarrantyEndDate.HasValue)
+                .Select(e => e.WarrantyEndDate.Value)
+                .Distinct()
+                .OrderBy(w => w)
+                .ToListAsync();
+            
+            ViewData["WarrantyEndOptions"] = warrantyEndDates
+                .Select(d => d.ToString("MM/dd/yyyy"))
+                .ToList();
+
+            // Get Notes options (first 50 characters for filtering)
+            ViewData["NotesOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Notes))
+                .Select(e => e.Notes.Length > 50 ? e.Notes.Substring(0, 50) + "..." : e.Notes)
+                .Distinct()
+                .OrderBy(n => n)
                 .ToListAsync();
 
             int currentPageSize = pageSize ?? 20;
@@ -919,6 +1050,63 @@ namespace AssetManagement.Controllers
                         await LogEquipmentAction(equipment.Id, "Department Updated", $"Department set to {request.Value}");
                         break;
 
+                    case "currentlocationid":
+                        // Find the location by name
+                        var locationName = request.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(locationName))
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Location cannot be empty" });
+                        }
+                        
+                        var location = await _context.Locations
+                            .FirstOrDefaultAsync(l => l.Name == locationName && l.IsActive);
+                        if (location == null)
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = $"Location '{locationName}' not found" });
+                        }
+                        
+                        equipment.CurrentLocationId = location.Id;
+                        await LogEquipmentAction(equipment.Id, "Location Updated", $"Location set to {locationName}");
+                        break;
+
+                    case "currentfloorplanid":
+                        // Find the floor plan by name
+                        var floorName = request.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(floorName))
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Floor cannot be empty" });
+                        }
+                        
+                        var floorPlan = await _context.FloorPlans
+                            .FirstOrDefaultAsync(f => f.FloorName == floorName && f.IsActive);
+                        if (floorPlan == null)
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = $"Floor '{floorName}' not found" });
+                        }
+                        
+                        equipment.CurrentFloorPlanId = floorPlan.Id;
+                        await LogEquipmentAction(equipment.Id, "Floor Updated", $"Floor set to {floorName}");
+                        break;
+
+                    case "currentdeskid":
+                        // Find the desk by name
+                        var deskName = request.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(deskName))
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Desk cannot be empty" });
+                        }
+                        
+                        var desk = await _context.Desks
+                            .FirstOrDefaultAsync(d => d.DeskName == deskName && d.IsActive);
+                        if (desk == null)
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = $"Desk '{deskName}' not found" });
+                        }
+                        
+                        equipment.CurrentDeskId = desk.Id;
+                        await LogEquipmentAction(equipment.Id, "Desk Updated", $"Desk set to {deskName}");
+                        break;
+
                     case "model":
                         equipment.Model = request.Value?.ToString();
                         await LogEquipmentAction(equipment.Id, "Model Updated", $"Model set to {request.Value}");
@@ -927,6 +1115,23 @@ namespace AssetManagement.Controllers
                     case "serial_number":
                         equipment.Serial_Number = request.Value?.ToString();
                         await LogEquipmentAction(equipment.Id, "Serial Number Updated", $"Serial number set to {request.Value}");
+                        break;
+
+                    case "manufacturer":
+                        equipment.Manufacturer = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Manufacturer Updated", $"Manufacturer set to {request.Value}");
+                        break;
+
+                    case "purchasedate":
+                        if (DateTime.TryParse(request.Value?.ToString(), out DateTime purchaseDate))
+                        {
+                            equipment.PurchaseDate = purchaseDate;
+                            await LogEquipmentAction(equipment.Id, "Purchase Date Updated", $"Purchase date set to {purchaseDate:MM/dd/yyyy}");
+                        }
+                        else
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Invalid date format. Please use MM/dd/yyyy" });
+                        }
                         break;
 
                     case "currentstatusid":

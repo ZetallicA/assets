@@ -4,6 +4,86 @@
 }
 
 <style>
+    /* Column reordering styles */
+    .table thead th {
+        cursor: move;
+        transition: background-color 0.2s, transform 0.1s;
+        user-select: none;
+    }
+    
+    .table thead th:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+    
+    .table thead th.actions-header {
+        cursor: default;
+    }
+    
+    .table thead th.actions-header:hover {
+        background: #f8f9fa;
+        transform: none;
+    }
+    
+    .sortable-ghost {
+        opacity: 0.5;
+        background: #dee2e6 !important;
+        transform: rotate(5deg);
+    }
+    
+    .sortable-chosen {
+        background: #fff3cd !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: scale(1.02);
+    }
+    
+    .sortable-drag {
+        background: #fff3cd !important;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        transform: rotate(5deg) scale(1.05);
+    }
+    
+    /* Text truncation and tooltip styles */
+    .table td {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .table td:hover {
+        white-space: normal;
+        word-wrap: break-word;
+        max-width: none;
+        position: relative;
+        z-index: 10;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 4px;
+        padding: 8px;
+    }
+    
+    /* Column toggle styles */
+    .column-toggle:checked + label {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    
+    /* Responsive table */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    /* Sticky header */
+    .table thead th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 1;
+    }
+</style>
+
+<style>
     .filter-button {
         padding: 2px 6px;
         font-size: 0.75rem;
@@ -100,78 +180,6 @@
             <p class="text-muted mb-0">Manage IT equipment inventory</p>
         </div>
         <div class="d-flex gap-2">
-            <!-- Column Selector -->
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-columns"></i> Columns
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 250px;">
-                    <li><h6 class="dropdown-header">Show/Hide Columns</h6></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <div class="px-3 py-2">
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-oath-tag" data-column="oath-tag" checked>
-                                <label class="form-check-label" for="col-oath-tag">OATH Tag</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-assigned-to" data-column="assigned-to" checked>
-                                <label class="form-check-label" for="col-assigned-to">Assigned To</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-category" data-column="category" checked>
-                                <label class="form-check-label" for="col-category">Category</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-unit" data-column="unit" checked>
-                                <label class="form-check-label" for="col-unit">Unit</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-location" data-column="location" checked>
-                                <label class="form-check-label" for="col-location">Location</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-floor" data-column="floor" checked>
-                                <label class="form-check-label" for="col-floor">Floor</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-status" data-column="status" checked>
-                                <label class="form-check-label" for="col-status">Status</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-net-name" data-column="net-name" checked>
-                                <label class="form-check-label" for="col-net-name">Net Name</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-model" data-column="model" checked>
-                                <label class="form-check-label" for="col-model">Model</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-serial-number" data-column="serial-number" checked>
-                                <label class="form-check-label" for="col-serial-number">Serial Number</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-desk-number" data-column="desk-number" checked>
-                                <label class="form-check-label" for="col-desk-number">Desk Number</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-manufacturer" data-column="manufacturer" checked>
-                                <label class="form-check-label" for="col-manufacturer">Manufacturer</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input column-toggle" type="checkbox" id="col-purchase-date" data-column="purchase-date" checked>
-                                <label class="form-check-label" for="col-purchase-date">Purchase Date</label>
-                            </div>
-                        </div>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <div class="px-3 py-2">
-                            <button class="btn btn-sm btn-outline-primary w-100" onclick="showAllColumns()">Show All</button>
-                        </div>
-                    </li>
-                </ul>
-            </div>
             <a asp-action="Create" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Add Equipment
             </a>
@@ -831,23 +839,373 @@
                                 </th>
                                 <th class="column-desk-number">
                                     <div class="d-flex align-items-center">
-                                        <span class="me-2">Desk Number</span>
-                                        <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["DeskNumberSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Desk Number
+                                            @if (ViewData["CurrentSort"]?.ToString() == "desknumber_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "desknumber")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["DeskNumberFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Desk Number</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search desk numbers..." 
+                                                               onkeyup="filterDropdownItems(this, 'desknumber-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2" id="desknumber-filter-items">
+                                                        @foreach (var deskNumber in ViewData["DeskNumberOptions"] as List<string> ?? new List<string>())
+                                                        {
+                                                            <div class="filter-item">
+                                                                <a class="dropdown-item @(deskNumber == ViewData["DeskNumberFilter"]?.ToString() ? "active" : "")" 
+                                                                   href="@Url.Action("Index", new { 
+                                                                       sortOrder = ViewData["CurrentSort"], 
+                                                                       currentFilter = ViewData["CurrentFilter"], 
+                                                                       categoryFilter = ViewData["CategoryFilter"], 
+                                                                       statusFilter = ViewData["StatusFilter"], 
+                                                                       departmentFilter = ViewData["DepartmentFilter"], 
+                                                                       serialNumberFilter = ViewData["SerialNumberFilter"],
+                                                                       deskNumberFilter = deskNumber 
+                                                                   })">
+                                                                    @deskNumber
+                                                                </a>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </th>
                                 <th class="column-manufacturer">
                                     <div class="d-flex align-items-center">
-                                        <span class="me-2">Manufacturer</span>
-                                        <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["ManufacturerSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Manufacturer
+                                            @if (ViewData["CurrentSort"]?.ToString() == "manufacturer_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "manufacturer")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["ManufacturerFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Manufacturer</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search manufacturers..." 
+                                                               onkeyup="filterDropdownItems(this, 'manufacturer-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2" id="manufacturer-filter-items">
+                                                        @foreach (var manufacturer in ViewData["ManufacturerOptions"] as List<string> ?? new List<string>())
+                                                        {
+                                                            <div class="filter-item">
+                                                                <a class="dropdown-item @(manufacturer == ViewData["ManufacturerFilter"]?.ToString() ? "active" : "")" 
+                                                                   href="@Url.Action("Index", new { 
+                                                                       sortOrder = ViewData["CurrentSort"], 
+                                                                       currentFilter = ViewData["CurrentFilter"], 
+                                                                       categoryFilter = ViewData["CategoryFilter"], 
+                                                                       statusFilter = ViewData["StatusFilter"], 
+                                                                       departmentFilter = ViewData["DepartmentFilter"], 
+                                                                       serialNumberFilter = ViewData["SerialNumberFilter"],
+                                                                       deskNumberFilter = ViewData["DeskNumberFilter"],
+                                                                       manufacturerFilter = manufacturer 
+                                                                   })">
+                                                                    @manufacturer
+                                                                </a>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </th>
                                 <th class="column-purchase-date">
                                     <div class="d-flex align-items-center">
-                                        <span class="me-2">Purchase Date</span>
-                                        <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["PurchaseDateSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
+                                            Purchase Date
+                                            @if (ViewData["CurrentSort"]?.ToString() == "purchasedate_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "purchasedate")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["PurchaseDateFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-funnel"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                                <li><h6 class="dropdown-header">Filter by Purchase Date</h6></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="Search purchase dates..." 
+                                                               onkeyup="filterDropdownItems(this, 'purchasedate-filter-items')">
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2" id="purchasedate-filter-items">
+                                                        @foreach (var purchaseDate in ViewData["PurchaseDateOptions"] as List<string> ?? new List<string>())
+                                                        {
+                                                            <div class="filter-item">
+                                                                <a class="dropdown-item @(purchaseDate == ViewData["PurchaseDateFilter"]?.ToString() ? "active" : "")" 
+                                                                   href="@Url.Action("Index", new { 
+                                                                       sortOrder = ViewData["CurrentSort"], 
+                                                                       currentFilter = ViewData["CurrentFilter"], 
+                                                                       categoryFilter = ViewData["CategoryFilter"], 
+                                                                       statusFilter = ViewData["StatusFilter"], 
+                                                                       departmentFilter = ViewData["DepartmentFilter"], 
+                                                                       serialNumberFilter = ViewData["SerialNumberFilter"],
+                                                                       deskNumberFilter = ViewData["DeskNumberFilter"],
+                                                                       manufacturerFilter = ViewData["ManufacturerFilter"],
+                                                                       purchaseDateFilter = purchaseDate 
+                                                                   })">
+                                                                    @purchaseDate
+                                                                </a>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </th>
-                                <th>Actions</th>
+                                <th class="column-asset-tag">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["AssetTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Asset Tag
+                                            @if (ViewData["CurrentSort"]?.ToString() == "asset_tag_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "asset_tag")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-service-tag">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["ServiceTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Service Tag
+                                            @if (ViewData["CurrentSort"]?.ToString() == "service_tag_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "service_tag")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-ip-address">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["IPAddressSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            IP Address
+                                            @if (ViewData["CurrentSort"]?.ToString() == "ip_address_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "ip_address")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-os-version">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["OSVersionSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            OS Version
+                                            @if (ViewData["CurrentSort"]?.ToString() == "os_version_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "os_version")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-phone-number">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["PhoneNumberSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Phone Number
+                                            @if (ViewData["CurrentSort"]?.ToString() == "phone_number_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "phone_number")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-purchase-price">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["PurchasePriceSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Purchase Price
+                                            @if (ViewData["CurrentSort"]?.ToString() == "purchase_price_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "purchase_price")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-warranty-end">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["WarrantyEndSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Warranty End
+                                            @if (ViewData["CurrentSort"]?.ToString() == "warranty_end_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "warranty_end")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-notes">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["NotesSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Notes
+                                            @if (ViewData["CurrentSort"]?.ToString() == "notes_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "notes")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-created-at">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["CreatedAtSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Created At
+                                            @if (ViewData["CurrentSort"]?.ToString() == "created_at_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "created_at")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="column-updated-at">
+                                    <div class="d-flex align-items-center">
+                                        <a asp-action="Index" asp-route-sortOrder="@ViewData["UpdatedAtSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="text-decoration-none me-2">
+                                            Updated At
+                                            @if (ViewData["CurrentSort"]?.ToString() == "updated_at_desc")
+                                            {
+                                                <i class="bi bi-sort-alpha-down ms-1"></i>
+                                            }
+                                            else if (ViewData["CurrentSort"]?.ToString() == "updated_at")
+                                            {
+                                                <i class="bi bi-sort-alpha-up ms-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                            }
+                                        </a>
+                                    </div>
+                                </th>
+                                <th class="actions-header">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span>Actions</span>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" type="button" data-bs-toggle="modal" data-bs-target="#columnSettingsModal" title="Column Settings">
+                                            <i class="bi bi-gear"></i>
+                                        </button>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -869,6 +1227,16 @@
                                     <td class="column-desk-number editable-cell" data-field="CurrentDeskId" data-value="@(item.CurrentDesk?.DeskName ?? "")" style="cursor: pointer;">@(item.CurrentDesk?.DeskName ?? "N/A")</td>
                                     <td class="column-manufacturer editable-cell" data-field="Manufacturer" data-value="@(item.Manufacturer ?? "")" style="cursor: pointer;">@(item.Manufacturer ?? "Unknown")</td>
                                     <td class="column-purchase-date editable-cell" data-field="PurchaseDate" data-value="@(item.PurchaseDate?.ToString("MM/dd/yyyy") ?? "")" style="cursor: pointer;">@(item.PurchaseDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                    <td class="column-asset-tag editable-cell" data-field="Asset_Tag" data-value="@(item.Asset_Tag ?? "")" style="cursor: pointer;" title="@(item.Asset_Tag ?? "N/A")">@(string.IsNullOrEmpty(item.Asset_Tag) ? "N/A" : (item.Asset_Tag.Length > 15 ? item.Asset_Tag.Substring(0, 15) + "..." : item.Asset_Tag))</td>
+                                    <td class="column-service-tag editable-cell" data-field="Service_Tag" data-value="@(item.Service_Tag ?? "")" style="cursor: pointer;" title="@(item.Service_Tag ?? "N/A")">@(string.IsNullOrEmpty(item.Service_Tag) ? "N/A" : (item.Service_Tag.Length > 15 ? item.Service_Tag.Substring(0, 15) + "..." : item.Service_Tag))</td>
+                                    <td class="column-ip-address editable-cell" data-field="IP_Address" data-value="@(item.IP_Address ?? "")" style="cursor: pointer;" title="@(item.IP_Address ?? "N/A")">@(string.IsNullOrEmpty(item.IP_Address) ? "N/A" : (item.IP_Address.Length > 15 ? item.IP_Address.Substring(0, 15) + "..." : item.IP_Address))</td>
+                                    <td class="column-os-version editable-cell" data-field="OS_Version" data-value="@(item.OS_Version ?? "")" style="cursor: pointer;" title="@(item.OS_Version ?? "N/A")">@(string.IsNullOrEmpty(item.OS_Version) ? "N/A" : (item.OS_Version.Length > 15 ? item.OS_Version.Substring(0, 15) + "..." : item.OS_Version))</td>
+                                    <td class="column-phone-number editable-cell" data-field="Phone_Number" data-value="@(item.Phone_Number ?? "")" style="cursor: pointer;" title="@(item.Phone_Number ?? "N/A")">@(string.IsNullOrEmpty(item.Phone_Number) ? "N/A" : (item.Phone_Number.Length > 15 ? item.Phone_Number.Substring(0, 15) + "..." : item.Phone_Number))</td>
+                                    <td class="column-purchase-price editable-cell" data-field="PurchasePrice" data-value="@(item.PurchasePrice?.ToString() ?? "")" style="cursor: pointer;" title="@(item.PurchasePrice?.ToString("C") ?? "N/A")">@(item.PurchasePrice?.ToString("C") ?? "N/A")</td>
+                                    <td class="column-warranty-end editable-cell" data-field="WarrantyEndDate" data-value="@(item.WarrantyEndDate?.ToString("MM/dd/yyyy") ?? "")" style="cursor: pointer;" title="@(item.WarrantyEndDate?.ToString("MM/dd/yyyy") ?? "N/A")">@(item.WarrantyEndDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                    <td class="column-notes editable-cell" data-field="Notes" data-value="@(item.Notes ?? "")" style="cursor: pointer;" title="@(item.Notes ?? "N/A")">@(string.IsNullOrEmpty(item.Notes) ? "N/A" : (item.Notes.Length > 20 ? item.Notes.Substring(0, 20) + "..." : item.Notes))</td>
+                                    <td class="column-created-at" title="@(item.CreatedAt.ToString("MM/dd/yyyy HH:mm"))">@(item.CreatedAt.ToString("MM/dd/yyyy"))</td>
+                                    <td class="column-updated-at" title="@(item.UpdatedAt?.ToString("MM/dd/yyyy HH:mm") ?? "N/A")">@(item.UpdatedAt?.ToString("MM/dd/yyyy") ?? "N/A")</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="View Details">
@@ -927,7 +1295,7 @@
                             @if (Model.HasPreviousPage)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]">
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]" asp-route-serialNumberFilter="@ViewData["SerialNumberFilter"]" asp-route-deskNumberFilter="@ViewData["DeskNumberFilter"]" asp-route-manufacturerFilter="@ViewData["ManufacturerFilter"]" asp-route-purchaseDateFilter="@ViewData["PurchaseDateFilter"]">
                                         <i class="bi bi-chevron-left"></i>
                                     </a>
                                 </li>
@@ -947,7 +1315,7 @@
                             @if (startPage > 1)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="1" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]">1</a>
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="1" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]" asp-route-serialNumberFilter="@ViewData["SerialNumberFilter"]" asp-route-deskNumberFilter="@ViewData["DeskNumberFilter"]" asp-route-manufacturerFilter="@ViewData["ManufacturerFilter"]" asp-route-purchaseDateFilter="@ViewData["PurchaseDateFilter"]">1</a>
                                 </li>
                                 @if (startPage > 2)
                                 {
@@ -968,7 +1336,7 @@
                                 else
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@i" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]">@i</a>
+                                        <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@i" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]" asp-route-serialNumberFilter="@ViewData["SerialNumberFilter"]" asp-route-deskNumberFilter="@ViewData["DeskNumberFilter"]" asp-route-manufacturerFilter="@ViewData["ManufacturerFilter"]" asp-route-purchaseDateFilter="@ViewData["PurchaseDateFilter"]">@i</a>
                                     </li>
                                 }
                             }
@@ -982,14 +1350,14 @@
                                     </li>
                                 }
                                 <li class="page-item">
-                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@Model.TotalPages" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]">@Model.TotalPages</a>
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@Model.TotalPages" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]" asp-route-serialNumberFilter="@ViewData["SerialNumberFilter"]" asp-route-deskNumberFilter="@ViewData["DeskNumberFilter"]" asp-route-manufacturerFilter="@ViewData["ManufacturerFilter"]" asp-route-purchaseDateFilter="@ViewData["PurchaseDateFilter"]">@Model.TotalPages</a>
                                 </li>
                             }
 
                             @if (Model.HasNextPage)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]">
+                                    <a class="page-link" asp-action="Index" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-oathTagFilter="@ViewData["OathTagFilter"]" asp-route-assignedToFilter="@ViewData["AssignedToFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" asp-route-netNameFilter="@ViewData["NetNameFilter"]" asp-route-modelFilter="@ViewData["ModelFilter"]" asp-route-serialNumberFilter="@ViewData["SerialNumberFilter"]" asp-route-deskNumberFilter="@ViewData["DeskNumberFilter"]" asp-route-manufacturerFilter="@ViewData["ManufacturerFilter"]" asp-route-purchaseDateFilter="@ViewData["PurchaseDateFilter"]">
                                         <i class="bi bi-chevron-right"></i>
                                     </a>
                                 </li>
@@ -1375,16 +1743,186 @@
     
     // Column Management Functions
     function initializeColumnManagement() {
-        // Load saved column preferences from localStorage
         loadColumnPreferences();
+        initializeColumnOrder();
+        initializeTooltips();
+        syncModalCheckboxes();
         
-        // Add event listeners to column toggles
         document.querySelectorAll('.column-toggle').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 toggleColumn(this.dataset.column, this.checked);
                 saveColumnPreferences();
+                syncModalCheckboxes();
             });
         });
+    }
+
+    // Sync modal checkboxes with main checkboxes
+    function syncModalCheckboxes() {
+        document.querySelectorAll('.column-toggle').forEach(checkbox => {
+            const columnName = checkbox.dataset.column;
+            const modalCheckbox = document.querySelector(`#modal-col-${columnName}`);
+            if (modalCheckbox) {
+                modalCheckbox.checked = checkbox.checked;
+            }
+        });
+    }
+
+    // Save column settings from modal
+    function saveColumnSettings() {
+        document.querySelectorAll('#columnSettingsModal .column-toggle').forEach(checkbox => {
+            const columnName = checkbox.dataset.column;
+            const mainCheckbox = document.querySelector(`#col-${columnName}`);
+            if (mainCheckbox) {
+                mainCheckbox.checked = checkbox.checked;
+                toggleColumn(columnName, checkbox.checked);
+            }
+        });
+        saveColumnPreferences();
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
+
+    // Initialize column reordering
+    function initializeColumnOrder() {
+        const table = document.querySelector('.table');
+        if (!table) return;
+
+        const thead = table.querySelector('thead tr');
+        if (!thead) return;
+
+        // Define column order
+        const columns = [
+            { id: 'oath-tag', name: 'OATH Tag' },
+            { id: 'assigned-to', name: 'Assigned To' },
+            { id: 'category', name: 'Category' },
+            { id: 'unit', name: 'Unit' },
+            { id: 'location', name: 'Location' },
+            { id: 'floor', name: 'Floor' },
+            { id: 'status', name: 'Status' },
+            { id: 'net-name', name: 'Net Name' },
+            { id: 'model', name: 'Model' },
+            { id: 'serial-number', name: 'Serial Number' },
+            { id: 'desk-number', name: 'Desk Number' },
+            { id: 'manufacturer', name: 'Manufacturer' },
+            { id: 'purchase-date', name: 'Purchase Date' },
+            { id: 'asset-tag', name: 'Asset Tag' },
+            { id: 'service-tag', name: 'Service Tag' },
+            { id: 'ip-address', name: 'IP Address' },
+            { id: 'os-version', name: 'OS Version' },
+            { id: 'phone-number', name: 'Phone Number' },
+            { id: 'purchase-price', name: 'Purchase Price' },
+            { id: 'warranty-end', name: 'Warranty End' },
+            { id: 'notes', name: 'Notes' },
+            { id: 'created-at', name: 'Created At' },
+            { id: 'updated-at', name: 'Updated At' }
+        ];
+
+        // Load saved order or use default
+        const savedOrder = localStorage.getItem('equipmentColumnOrder');
+        const columnOrder = savedOrder ? JSON.parse(savedOrder) : columns.map(c => c.id);
+
+        // Apply the order to the table
+        reorderTableColumns(columnOrder);
+
+        // Make table headers draggable
+        if (typeof Sortable !== 'undefined') {
+            new Sortable(thead, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                filter: '.actions-header', // Don't allow dragging the Actions column
+                onEnd: function(evt) {
+                    const headerCells = Array.from(thead.children);
+                    const newOrder = [];
+                    
+                    headerCells.forEach(cell => {
+                        // Find which column this header represents
+                        for (const column of columns) {
+                            if (cell.classList.contains(`column-${column.id}`)) {
+                                newOrder.push(column.id);
+                                break;
+                            }
+                        }
+                    });
+                    
+                    // Add Actions column at the end
+                    newOrder.push('actions');
+                    
+                    localStorage.setItem('equipmentColumnOrder', JSON.stringify(newOrder));
+                    reorderTableColumns(newOrder);
+                }
+            });
+        }
+    }
+
+    // Reorder table columns based on the new order
+    function reorderTableColumns(columnOrder) {
+        const table = document.querySelector('.table');
+        if (!table) return;
+
+        const thead = table.querySelector('thead tr');
+        const tbody = table.querySelector('tbody');
+
+        // Reorder header cells
+        const headerCells = Array.from(thead.children);
+        const newHeaderOrder = [];
+        
+        columnOrder.forEach(columnId => {
+            const cell = headerCells.find(cell => cell.classList.contains(`column-${columnId}`));
+            if (cell) newHeaderOrder.push(cell);
+        });
+
+        // Add Actions column at the end
+        const actionsCell = headerCells.find(cell => cell.textContent.trim() === 'Actions');
+        if (actionsCell) newHeaderOrder.push(actionsCell);
+
+        // Clear and re-add header cells
+        thead.innerHTML = '';
+        newHeaderOrder.forEach(cell => thead.appendChild(cell));
+
+        // Reorder data cells for each row
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+            const cells = Array.from(row.children);
+            const newCellOrder = [];
+            
+            columnOrder.forEach(columnId => {
+                const cell = cells.find(cell => cell.classList.contains(`column-${columnId}`));
+                if (cell) newCellOrder.push(cell);
+            });
+
+            // Add Actions cell at the end
+            const actionsCell = cells.find(cell => cell.querySelector('.btn-group'));
+            if (actionsCell) newCellOrder.push(actionsCell);
+
+            // Clear and re-add cells
+            row.innerHTML = '';
+            newCellOrder.forEach(cell => row.appendChild(cell));
+        });
+    }
+
+    // Initialize tooltips for truncated text
+    function initializeTooltips() {
+        // Initialize Bootstrap tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                placement: 'top',
+                trigger: 'hover'
+            });
+        });
+    }
+
+    // Reset column order to default
+    function resetColumnOrder() {
+        localStorage.removeItem('equipmentColumnOrder');
+        initializeColumnOrder();
     }
     
     function toggleColumn(columnName, show) {
@@ -1430,4 +1968,139 @@
         }
     }
 </script>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1" aria-labelledby="columnSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="columnSettingsModalLabel">
+                    <i class="bi bi-gear"></i> Column Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>Show/Hide Columns</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-oath-tag" data-column="oath-tag" checked>
+                                    <label class="form-check-label" for="modal-col-oath-tag">OATH Tag</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-assigned-to" data-column="assigned-to" checked>
+                                    <label class="form-check-label" for="modal-col-assigned-to">Assigned To</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-category" data-column="category" checked>
+                                    <label class="form-check-label" for="modal-col-category">Category</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-unit" data-column="unit" checked>
+                                    <label class="form-check-label" for="modal-col-unit">Unit</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-location" data-column="location" checked>
+                                    <label class="form-check-label" for="modal-col-location">Location</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-floor" data-column="floor" checked>
+                                    <label class="form-check-label" for="modal-col-floor">Floor</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-status" data-column="status" checked>
+                                    <label class="form-check-label" for="modal-col-status">Status</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-net-name" data-column="net-name" checked>
+                                    <label class="form-check-label" for="modal-col-net-name">Net Name</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-model" data-column="model" checked>
+                                    <label class="form-check-label" for="modal-col-model">Model</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-serial-number" data-column="serial-number" checked>
+                                    <label class="form-check-label" for="modal-col-serial-number">Serial Number</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-desk-number" data-column="desk-number" checked>
+                                    <label class="form-check-label" for="modal-col-desk-number">Desk Number</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-manufacturer" data-column="manufacturer" checked>
+                                    <label class="form-check-label" for="modal-col-manufacturer">Manufacturer</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-purchase-date" data-column="purchase-date" checked>
+                                    <label class="form-check-label" for="modal-col-purchase-date">Purchase Date</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-asset-tag" data-column="asset-tag" checked>
+                                    <label class="form-check-label" for="modal-col-asset-tag">Asset Tag</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-service-tag" data-column="service-tag" checked>
+                                    <label class="form-check-label" for="modal-col-service-tag">Service Tag</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-ip-address" data-column="ip-address" checked>
+                                    <label class="form-check-label" for="modal-col-ip-address">IP Address</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-os-version" data-column="os-version" checked>
+                                    <label class="form-check-label" for="modal-col-os-version">OS Version</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-phone-number" data-column="phone-number" checked>
+                                    <label class="form-check-label" for="modal-col-phone-number">Phone Number</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-purchase-price" data-column="purchase-price" checked>
+                                    <label class="form-check-label" for="modal-col-purchase-price">Purchase Price</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-warranty-end" data-column="warranty-end" checked>
+                                    <label class="form-check-label" for="modal-col-warranty-end">Warranty End</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-notes" data-column="notes" checked>
+                                    <label class="form-check-label" for="modal-col-notes">Notes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-created-at" data-column="created-at" checked>
+                                    <label class="form-check-label" for="modal-col-created-at">Created At</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input column-toggle" type="checkbox" id="modal-col-updated-at" data-column="updated-at" checked>
+                                    <label class="form-check-label" for="modal-col-updated-at">Updated At</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="showAllColumns()">Show All</button>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="resetColumnOrder()">Reset Column Order</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Column Management</h6>
+                        <p class="text-muted small">Drag table headers to reorder columns</p>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Tip:</strong> You can also drag column headers directly in the table to reorder them.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveColumnSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
 }
