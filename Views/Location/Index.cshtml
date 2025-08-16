@@ -82,18 +82,49 @@
                                                 </small>
                                             </td>
                                             <td>
-                                                <div class="btn-group" role="group">
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Location actions">
                                                     <a asp-action="Details" asp-route-id="@location.Id" 
-                                                       class="btn btn-sm btn-outline-primary" title="View Details">
-                                                        <i class="fas fa-eye"></i>
+                                                       class="btn btn-outline-primary" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="View location details and floor plans">
+                                                        <i class="bi bi-eye"></i>
+                                                        <span class="d-none d-sm-inline ms-1">View</span>
                                                     </a>
                                                     <a asp-action="Edit" asp-route-id="@location.Id" 
-                                                       class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                        <i class="fas fa-edit"></i>
+                                                       class="btn btn-outline-secondary" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="Edit location information">
+                                                        <i class="bi bi-pencil"></i>
+                                                        <span class="d-none d-sm-inline ms-1">Edit</span>
                                                     </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                            onclick="deleteLocation(@location.Id, '@location.Name')" title="Delete">
-                                                        <i class="fas fa-trash"></i>
+                                                    <a href="#" 
+                                                       class="btn btn-outline-info" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="Manage floor plans for this location"
+                                                       onclick="manageFloorPlans(@location.Id, '@location.Name')">
+                                                        <i class="bi bi-building"></i>
+                                                        <span class="d-none d-sm-inline ms-1">Floors</span>
+                                                    </a>
+                                                    <a href="#" 
+                                                       class="btn btn-outline-success" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="View equipment at this location"
+                                                       onclick="viewLocationEquipment(@location.Id, '@location.Name')">
+                                                        <i class="bi bi-laptop"></i>
+                                                        <span class="d-none d-sm-inline ms-1">Equipment</span>
+                                                    </a>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-danger" 
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top" 
+                                                            title="Delete this location (will deactivate floor plans and desks)"
+                                                            onclick="deleteLocation(@location.Id, '@location.Name')">
+                                                        <i class="bi bi-trash"></i>
+                                                        <span class="d-none d-sm-inline ms-1">Delete</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -111,16 +142,99 @@
 
 @section Scripts {
     <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+
         function deleteLocation(id, name) {
-            if (confirm(`Are you sure you want to delete the location "${name}"? This will also deactivate all associated floor plans and desks.`)) {
-                $.post('@Url.Action("Delete")', { id: id })
-                    .done(function() {
-                        location.reload();
-                    })
-                    .fail(function() {
-                        alert('Failed to delete location');
-                    });
-            }
+            // Create a more sophisticated confirmation dialog
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                                Confirm Deletion
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete the location <strong>"${name}"</strong>?</p>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Warning:</strong> This action will also deactivate all associated floor plans and desks.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="confirmDeleteLocation(${id})">
+                                <i class="bi bi-trash me-2"></i>Delete Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
         }
+
+        function confirmDeleteLocation(id) {
+            // Show loading state
+            const modal = document.querySelector('.modal');
+            const modalBody = modal.querySelector('.modal-body');
+            const modalFooter = modal.querySelector('.modal-footer');
+            
+            modalBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split fs-1 text-primary"></i><p class="mt-2">Deleting location...</p></div>';
+            modalFooter.innerHTML = '';
+            
+            $.post('@Url.Action("Delete")', { id: id })
+                .done(function() {
+                    modalBody.innerHTML = '<div class="text-center"><i class="bi bi-check-circle fs-1 text-success"></i><p class="mt-2">Location deleted successfully!</p></div>';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                })
+                .fail(function() {
+                    modalBody.innerHTML = '<div class="text-center"><i class="bi bi-x-circle fs-1 text-danger"></i><p class="mt-2">Failed to delete location. Please try again.</p></div>';
+                    modalFooter.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+                });
+        }
+
+        function manageFloorPlans(locationId, locationName) {
+            // Navigate to floor plans management for this location
+            window.location.href = `/FloorPlan?locationId=${locationId}`;
+        }
+
+        function viewLocationEquipment(locationId, locationName) {
+            // Navigate to equipment page filtered by this location
+            window.location.href = `/Equipment?locationFilter=${encodeURIComponent(locationName)}`;
+        }
+
+        // Add hover effects for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            const actionButtons = document.querySelectorAll('.btn-group .btn');
+            actionButtons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.05)';
+                    this.style.transition = 'transform 0.2s ease';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        });
     </script>
 }

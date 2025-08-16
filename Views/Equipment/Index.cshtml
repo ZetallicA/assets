@@ -99,9 +99,83 @@
             <h1 class="h3 mb-0">Equipment</h1>
             <p class="text-muted mb-0">Manage IT equipment inventory</p>
         </div>
-        <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Add Equipment
-        </a>
+        <div class="d-flex gap-2">
+            <!-- Column Selector -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-columns"></i> Columns
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 250px;">
+                    <li><h6 class="dropdown-header">Show/Hide Columns</h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <div class="px-3 py-2">
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-oath-tag" data-column="oath-tag" checked>
+                                <label class="form-check-label" for="col-oath-tag">OATH Tag</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-assigned-to" data-column="assigned-to" checked>
+                                <label class="form-check-label" for="col-assigned-to">Assigned To</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-category" data-column="category" checked>
+                                <label class="form-check-label" for="col-category">Category</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-unit" data-column="unit" checked>
+                                <label class="form-check-label" for="col-unit">Unit</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-location" data-column="location" checked>
+                                <label class="form-check-label" for="col-location">Location</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-floor" data-column="floor" checked>
+                                <label class="form-check-label" for="col-floor">Floor</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-status" data-column="status" checked>
+                                <label class="form-check-label" for="col-status">Status</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-net-name" data-column="net-name" checked>
+                                <label class="form-check-label" for="col-net-name">Net Name</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-model" data-column="model" checked>
+                                <label class="form-check-label" for="col-model">Model</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-serial-number" data-column="serial-number" checked>
+                                <label class="form-check-label" for="col-serial-number">Serial Number</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-desk-number" data-column="desk-number" checked>
+                                <label class="form-check-label" for="col-desk-number">Desk Number</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-manufacturer" data-column="manufacturer" checked>
+                                <label class="form-check-label" for="col-manufacturer">Manufacturer</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input column-toggle" type="checkbox" id="col-purchase-date" data-column="purchase-date" checked>
+                                <label class="form-check-label" for="col-purchase-date">Purchase Date</label>
+                            </div>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <div class="px-3 py-2">
+                            <button class="btn btn-sm btn-outline-primary w-100" onclick="showAllColumns()">Show All</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Equipment
+            </a>
+        </div>
     </div>
 
     <!-- Search and Filter Form -->
@@ -206,7 +280,7 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>
+                                <th class="column-oath-tag">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["OATHTagSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             OATH Tag
@@ -261,7 +335,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-assigned-to">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["AssignedToSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Assigned To
@@ -316,7 +390,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-category">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Category
@@ -370,7 +444,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-unit">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["DepartmentSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Unit
@@ -424,7 +498,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-location">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Location
@@ -480,7 +554,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-floor">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["FloorSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" asp-route-locationFilter="@ViewData["LocationFilter"]" class="text-decoration-none me-2">
                                             Floor
@@ -536,7 +610,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-status">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["StatusSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Status
@@ -590,7 +664,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-net-name">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["NetNameSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Net Name
@@ -645,7 +719,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-model">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["ModelSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Model
@@ -700,7 +774,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <th>
+                                <th class="column-serial-number">
                                     <div class="d-flex align-items-center">
                                         <a asp-action="Index" asp-route-sortOrder="@ViewData["SerialNumberSortParm"]" asp-route-currentFilter="@ViewData["CurrentFilter"]" asp-route-categoryFilter="@ViewData["CategoryFilter"]" asp-route-statusFilter="@ViewData["StatusFilter"]" asp-route-departmentFilter="@ViewData["DepartmentFilter"]" class="text-decoration-none me-2">
                                             Serial Number
@@ -755,6 +829,24 @@
                                         </div>
                                     </div>
                                 </th>
+                                <th class="column-desk-number">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">Desk Number</span>
+                                        <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                    </div>
+                                </th>
+                                <th class="column-manufacturer">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">Manufacturer</span>
+                                        <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                    </div>
+                                </th>
+                                <th class="column-purchase-date">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">Purchase Date</span>
+                                        <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                                    </div>
+                                </th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -764,16 +856,19 @@
                             {
                                 <tr class="equipment-row" data-equipment-id="@item.Id" data-oath-tag="@item.OATH_Tag">
                                     <!-- Debug: Equipment ID @item.Id, OATH Tag @item.OATH_Tag -->
-                                    <td class="editable-cell" data-field="OATH_Tag" data-value="@item.OATH_Tag" style="cursor: pointer;">@item.OATH_Tag</td>
-                                    <td class="editable-cell" data-field="Assigned_User_Name" data-value="@(item.Assigned_User_Name ?? "")" style="cursor: pointer;">@(item.Assigned_User_Name ?? "Unassigned")</td>
-                                    <td class="editable-cell" data-field="AssetCategoryId" data-value="@(item.AssetCategory?.Name ?? "")" style="cursor: pointer;">@(item.AssetCategory?.Name ?? "Unknown")</td>
-                                    <td class="editable-cell" data-field="Department" data-value="@(item.Department ?? "")" style="cursor: pointer;">@(item.Department ?? "Unknown")</td>
-                                    <td class="editable-cell" data-field="CurrentLocationId" data-value="@(item.CurrentLocation?.Name ?? "Unknown")" style="cursor: pointer;">@(item.CurrentLocation?.Name ?? "Unknown")</td>
-                                    <td class="editable-cell" data-field="CurrentFloorPlanId" data-value="@(item.CurrentFloorPlan?.FloorName ?? "Unknown")" style="cursor: pointer;">@(item.CurrentFloorPlan?.FloorName ?? "Unknown")</td>
-                                    <td class="editable-cell" data-field="CurrentStatusId" data-value="@(item.CurrentStatus?.Name ?? "")" style="cursor: pointer;">@(item.CurrentStatus?.Name ?? "Unknown")</td>
-                                    <td class="editable-cell" data-field="NetName" data-value="@(item.TechnologyConfiguration?.NetName ?? "")" style="cursor: pointer;">@(item.TechnologyConfiguration?.NetName ?? "N/A")</td>
-                                    <td class="editable-cell" data-field="Model" data-value="@(item.Model ?? "")" style="cursor: pointer;">@(item.Model ?? "Unknown")</td>
-                                    <td class="editable-cell" data-field="Serial_Number" data-value="@(item.Serial_Number ?? "")" style="cursor: pointer;">@(item.Serial_Number ?? "N/A")</td>
+                                    <td class="column-oath-tag editable-cell" data-field="OATH_Tag" data-value="@item.OATH_Tag" style="cursor: pointer;">@item.OATH_Tag</td>
+                                    <td class="column-assigned-to editable-cell" data-field="Assigned_User_Name" data-value="@(item.Assigned_User_Name ?? "")" style="cursor: pointer;">@(item.Assigned_User_Name ?? "Unassigned")</td>
+                                    <td class="column-category editable-cell" data-field="AssetCategoryId" data-value="@(item.AssetCategory?.Name ?? "")" style="cursor: pointer;">@(item.AssetCategory?.Name ?? "Unknown")</td>
+                                    <td class="column-unit editable-cell" data-field="Department" data-value="@(item.Department ?? "")" style="cursor: pointer;">@(item.Department ?? "Unknown")</td>
+                                    <td class="column-location editable-cell" data-field="CurrentLocationId" data-value="@(item.CurrentLocation?.Name ?? "Unknown")" style="cursor: pointer;">@(item.CurrentLocation?.Name ?? "Unknown")</td>
+                                    <td class="column-floor editable-cell" data-field="CurrentFloorPlanId" data-value="@(item.CurrentFloorPlan?.FloorName ?? "Unknown")" style="cursor: pointer;">@(item.CurrentFloorPlan?.FloorName ?? "Unknown")</td>
+                                    <td class="column-status editable-cell" data-field="CurrentStatusId" data-value="@(item.CurrentStatus?.Name ?? "")" style="cursor: pointer;">@(item.CurrentStatus?.Name ?? "Unknown")</td>
+                                    <td class="column-net-name editable-cell" data-field="NetName" data-value="@(item.TechnologyConfiguration?.NetName ?? "")" style="cursor: pointer;">@(item.TechnologyConfiguration?.NetName ?? "N/A")</td>
+                                    <td class="column-model editable-cell" data-field="Model" data-value="@(item.Model ?? "")" style="cursor: pointer;">@(item.Model ?? "Unknown")</td>
+                                    <td class="column-serial-number editable-cell" data-field="Serial_Number" data-value="@(item.Serial_Number ?? "")" style="cursor: pointer;">@(item.Serial_Number ?? "N/A")</td>
+                                    <td class="column-desk-number editable-cell" data-field="CurrentDeskId" data-value="@(item.CurrentDesk?.DeskName ?? "")" style="cursor: pointer;">@(item.CurrentDesk?.DeskName ?? "N/A")</td>
+                                    <td class="column-manufacturer editable-cell" data-field="Manufacturer" data-value="@(item.Manufacturer ?? "")" style="cursor: pointer;">@(item.Manufacturer ?? "Unknown")</td>
+                                    <td class="column-purchase-date editable-cell" data-field="PurchaseDate" data-value="@(item.PurchaseDate?.ToString("MM/dd/yyyy") ?? "")" style="cursor: pointer;">@(item.PurchaseDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="View Details">
@@ -1045,6 +1140,9 @@
         // Initialize inline cell editing functionality
         initializeInlineEditing();
         
+        // Initialize column management
+        initializeColumnManagement();
+        
         // Debug: Show equipment IDs on current page
         const equipmentRows = Array.from(document.querySelectorAll('tr[data-equipment-id]'));
         const equipmentData = equipmentRows.map(row => ({
@@ -1273,6 +1371,63 @@
                 toast.remove();
             }
         }, 3000);
+    }
+    
+    // Column Management Functions
+    function initializeColumnManagement() {
+        // Load saved column preferences from localStorage
+        loadColumnPreferences();
+        
+        // Add event listeners to column toggles
+        document.querySelectorAll('.column-toggle').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                toggleColumn(this.dataset.column, this.checked);
+                saveColumnPreferences();
+            });
+        });
+    }
+    
+    function toggleColumn(columnName, show) {
+        const columnClass = `column-${columnName}`;
+        const elements = document.querySelectorAll(`.${columnClass}`);
+        
+        elements.forEach(element => {
+            if (show) {
+                element.style.display = '';
+            } else {
+                element.style.display = 'none';
+            }
+        });
+    }
+    
+    function showAllColumns() {
+        document.querySelectorAll('.column-toggle').forEach(checkbox => {
+            checkbox.checked = true;
+            toggleColumn(checkbox.dataset.column, true);
+        });
+        saveColumnPreferences();
+    }
+    
+    function saveColumnPreferences() {
+        const preferences = {};
+        document.querySelectorAll('.column-toggle').forEach(checkbox => {
+            preferences[checkbox.dataset.column] = checkbox.checked;
+        });
+        localStorage.setItem('equipment-column-preferences', JSON.stringify(preferences));
+    }
+    
+    function loadColumnPreferences() {
+        const saved = localStorage.getItem('equipment-column-preferences');
+        if (saved) {
+            const preferences = JSON.parse(saved);
+            document.querySelectorAll('.column-toggle').forEach(checkbox => {
+                const columnName = checkbox.dataset.column;
+                if (preferences.hasOwnProperty(columnName)) {
+                    checkbox.checked = preferences[columnName];
+                    toggleColumn(columnName, preferences[columnName]);
+                }
+            });
+        }
     }
 </script>
 }
