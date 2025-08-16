@@ -57,9 +57,26 @@
                                 <i class="bi bi-file-earmark-arrow-up"></i> Import
                             </a>
                         </li>
-
-
                     </ul>
+                    
+                    <!-- Global Search -->
+                    <div class="navbar-nav">
+                        <div class="nav-item position-relative">
+                            <div class="input-group" style="width: 300px;">
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="globalSearch" 
+                                       placeholder="Search equipment, users, floor plans... (Press / to focus)"
+                                       autocomplete="off">
+                                <button class="btn btn-outline-light btn-sm" type="button" id="searchBtn">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <div id="searchResults" class="position-absolute w-100" style="top: 100%; z-index: 1000; display: none;">
+                                <!-- Search results will be populated here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -78,6 +95,9 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/toasts.js" asp-append-version="true"></script>
+    <script src="~/js/datatable.js" asp-append-version="true"></script>
+    <script src="~/js/global-search.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

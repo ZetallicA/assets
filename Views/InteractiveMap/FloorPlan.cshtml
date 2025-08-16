@@ -512,11 +512,45 @@
                 window.contextMenuDeskId = deskId;
             }
             
+            // Get scroll position
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Calculate position relative to viewport
+            const viewportX = x - scrollX;
+            const viewportY = y - scrollY;
+            
+            // Get menu dimensions
+            const menuWidth = $menu.outerWidth();
+            const menuHeight = $menu.outerHeight();
+            
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Adjust position to keep menu within viewport
+            let finalX = viewportX;
+            let finalY = viewportY;
+            
+            if (viewportX + menuWidth > viewportWidth) {
+                finalX = viewportX - menuWidth;
+            }
+            
+            if (viewportY + menuHeight > viewportHeight) {
+                finalY = viewportY - menuHeight;
+            }
+            
+            // Ensure menu doesn't go off-screen to the left or top
+            finalX = Math.max(0, finalX);
+            finalY = Math.max(0, finalY);
+            
             // Position and show menu
             $menu.css({
-                left: x + 'px',
-                top: y + 'px',
-                display: 'block'
+                left: finalX + 'px',
+                top: finalY + 'px',
+                display: 'block',
+                position: 'fixed',
+                zIndex: 9999
             });
         }
 

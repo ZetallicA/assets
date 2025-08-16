@@ -259,6 +259,7 @@
                         $deleteBtn.html('<i class="fas fa-check me-1"></i>Deleted!');
                         $deleteBtn.removeClass('btn-danger').addClass('btn-success');
                         
+                        showSuccess('Floor plan deleted successfully');
                         setTimeout(function() {
                             location.reload();
                         }, 1000);
@@ -267,9 +268,62 @@
                         // Reset button on error
                         $deleteBtn.html(originalContent);
                         $deleteBtn.prop('disabled', false);
-                        alert('Failed to delete floor plan');
+                        showError('Failed to delete floor plan');
                     });
             }
         }
     </script>
 }
+
+<!-- Desk Editing Feature Modal -->
+<div class="modal fade" id="deskEditingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-desk me-2"></i>Desk Editing Feature
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>What's Coming Soon</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Visual desk placement on floor plans</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Drag & drop equipment assignment</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Real-time desk availability</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Interactive floor plan editor</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Equipment-to-desk mapping</li>
+                        </ul>
+                        
+                        <h6 class="mt-4">Current Status</h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            The desk editing feature is currently in development. 
+                            You can still manage desks through the floor plan details page.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock fa-3x text-primary mb-3"></i>
+                                <h6>Estimated Release</h6>
+                                <p class="text-muted">Q1 2025</p>
+                                <button class="btn btn-primary btn-sm" onclick="window.location.href='/FloorPlan'">
+                                    <i class="fas fa-map me-1"></i>View Floor Plans
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.href='/FloorPlan'">
+                    <i class="fas fa-map me-1"></i>Go to Floor Plans
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

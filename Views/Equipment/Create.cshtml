@@ -3,29 +3,151 @@
     ViewData["Title"] = "Add Equipment";
 }
 
+<style>
+    .form-card {
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .form-card.active {
+        display: block;
+    }
+    
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .progress-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #007bff 0%, #28a745 100%);
+        transition: width 0.3s ease;
+    }
+    
+    .step-indicator {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .step-indicator.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .step-indicator.completed {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .step-indicator.pending {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    
+    .form-section {
+        border-left: 4px solid #007bff;
+        padding-left: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section h5 {
+        color: #007bff;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-navigation {
+        min-width: 120px;
+    }
+    
+    .summary-item {
+        padding: 0.5rem;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .summary-value {
+        color: #6c757d;
+    }
+</style>
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0">Add Equipment</h1>
-            <p class="text-muted mb-0">Add new equipment to the inventory</p>
+            <p class="text-muted mb-0">Step-by-step equipment creation</p>
         </div>
         <a asp-action="Index" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back to List
         </a>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
+    <!-- Progress Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <div class="step-indicator active" id="step1-indicator">1</div>
+                    <span class="ms-2">Equipment Details</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="step-indicator pending" id="step2-indicator">2</div>
+                    <span class="ms-2">People & Assignment</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="step-indicator pending" id="step3-indicator">3</div>
+                    <span class="ms-2">Tech Configuration</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="step-indicator pending" id="step4-indicator">4</div>
+                    <span class="ms-2">Location & Finance</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="step-indicator pending" id="step5-indicator">5</div>
+                    <span class="ms-2">Review & Save</span>
+                </div>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar" id="progress-bar" style="width: 20%"></div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="Create" method="post" id="equipment-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        
+        <!-- Step 1: Equipment Details -->
+        <div class="form-card active" id="step1">
             <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-laptop me-2"></i>Equipment Details</h5>
+                </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                        
+                    <div class="form-section">
+                        <h5>Basic Information</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="OATH_Tag" class="form-label">OATH Tag *</label>
-                                    <input asp-for="OATH_Tag" class="form-control" placeholder="Enter OATH Tag" />
+                                    <input asp-for="OATH_Tag" class="form-control" placeholder="Enter OATH Tag" required />
                                     <span asp-validation-for="OATH_Tag" class="text-danger"></span>
                                 </div>
                             </div>
@@ -37,7 +159,10 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="form-section">
+                        <h5>Equipment Classification</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -58,7 +183,10 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="form-section">
+                        <h5>Hardware Information</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -75,30 +203,52 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary btn-navigation" onclick="nextStep()">
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: People & Assignment -->
+        <div class="form-card" id="step2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>People & Assignment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-section">
+                        <h5>User Assignment</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Computer_Name" class="form-label">Computer Name</label>
-                                    <input asp-for="Computer_Name" class="form-control" placeholder="Enter Computer Name" />
-                                    <span asp-validation-for="Computer_Name" class="text-danger"></span>
+                                    <label asp-for="Assigned_User_Name" class="form-label">Assigned User Name</label>
+                                    <input asp-for="Assigned_User_Name" class="form-control" placeholder="Enter User Name" />
+                                    <span asp-validation-for="Assigned_User_Name" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="PurchaseOrderNumber" class="form-label">Purchase Order Number</label>
-                                    <input asp-for="PurchaseOrderNumber" class="form-control" placeholder="Enter PO Number" />
-                                    <span asp-validation-for="PurchaseOrderNumber" class="text-danger"></span>
+                                    <label asp-for="Assigned_User_Email" class="form-label">Assigned User Email</label>
+                                    <input asp-for="Assigned_User_Email" class="form-control" type="email" placeholder="Enter User Email" />
+                                    <span asp-validation-for="Assigned_User_Email" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="form-section">
+                        <h5>Department Information</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="PurchasePrice" class="form-label">Purchase Price</label>
-                                    <input asp-for="PurchasePrice" class="form-control" type="number" step="0.01" placeholder="0.00" />
-                                    <span asp-validation-for="PurchasePrice" class="text-danger"></span>
+                                    <label asp-for="Department" class="form-label">Department</label>
+                                    <input asp-for="Department" class="form-control" placeholder="Enter Department" />
+                                    <span asp-validation-for="Department" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -109,32 +259,85 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary btn-navigation" onclick="previousStep()">
+                            <i class="bi bi-arrow-left me-1"></i> Previous
+                        </button>
+                        <button type="button" class="btn btn-primary btn-navigation" onclick="nextStep()">
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Tech Configuration -->
+        <div class="form-card" id="step3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Tech Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-section">
+                        <h5>Network Configuration</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="PurchaseDate" class="form-label">Purchase Date</label>
-                                    <input asp-for="PurchaseDate" class="form-control" type="date" />
-                                    <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+                                    <label asp-for="Computer_Name" class="form-label">Computer Name</label>
+                                    <input asp-for="Computer_Name" class="form-control" placeholder="Enter Computer Name" />
+                                    <span asp-validation-for="Computer_Name" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Condition" class="form-label">Condition</label>
-                                    <select asp-for="Condition" class="form-select">
-                                        <option value="">-- Select Condition --</option>
-                                        <option value="New">New</option>
-                                        <option value="Excellent">Excellent</option>
-                                        <option value="Good">Good</option>
-                                        <option value="Fair">Fair</option>
-                                        <option value="Poor">Poor</option>
-                                        <option value="Broken">Broken</option>
-                                    </select>
-                                    <span asp-validation-for="Condition" class="text-danger"></span>
+                                    <label class="form-label">IP Address</label>
+                                    <input type="text" class="form-control" placeholder="Enter IP Address" />
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="form-section">
+                        <h5>Additional Tech Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">MAC Address</label>
+                                    <input type="text" class="form-control" placeholder="Enter MAC Address" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Wall Port</label>
+                                    <input type="text" class="form-control" placeholder="Enter Wall Port" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary btn-navigation" onclick="previousStep()">
+                            <i class="bi bi-arrow-left me-1"></i> Previous
+                        </button>
+                        <button type="button" class="btn btn-primary btn-navigation" onclick="nextStep()">
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Location & Finance -->
+        <div class="form-card" id="step4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building me-2"></i>Location & Finance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-section">
+                        <h5>Physical Location</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -155,136 +358,201 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="form-section">
+                        <h5>Financial Information</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="CurrentDeskId" class="form-label">Desk</label>
-                                    <select asp-for="CurrentDeskId" class="form-select" asp-items="ViewBag.CurrentDeskId">
-                                        <option value="">-- Select Desk --</option>
+                                    <label asp-for="PurchasePrice" class="form-label">Purchase Price</label>
+                                    <input asp-for="PurchasePrice" class="form-control" type="number" step="0.01" placeholder="0.00" />
+                                    <span asp-validation-for="PurchasePrice" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PurchaseDate" class="form-label">Purchase Date</label>
+                                    <input asp-for="PurchaseDate" class="form-control" type="date" />
+                                    <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PurchaseOrderNumber" class="form-label">Purchase Order Number</label>
+                                    <input asp-for="PurchaseOrderNumber" class="form-control" placeholder="Enter PO Number" />
+                                    <span asp-validation-for="PurchaseOrderNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Condition" class="form-label">Condition</label>
+                                    <select asp-for="Condition" class="form-select">
+                                        <option value="">-- Select Condition --</option>
+                                        <option value="New">New</option>
+                                        <option value="Like New">Like New</option>
+                                        <option value="Good">Good</option>
+                                        <option value="Fair">Fair</option>
+                                        <option value="Poor">Poor</option>
                                     </select>
-                                    <span asp-validation-for="CurrentDeskId" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Department" class="form-label">Department</label>
-                                    <input asp-for="Department" class="form-control" placeholder="Enter Department" />
-                                    <span asp-validation-for="Department" class="text-danger"></span>
+                                    <span asp-validation-for="Condition" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Assigned_User_Name" class="form-label">Assigned User Name</label>
-                                    <input asp-for="Assigned_User_Name" class="form-control" placeholder="Enter User Name" />
-                                    <span asp-validation-for="Assigned_User_Name" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Assigned_User_Email" class="form-label">Assigned User Email</label>
-                                    <input asp-for="Assigned_User_Email" class="form-control" type="email" placeholder="Enter User Email" />
-                                    <span asp-validation-for="Assigned_User_Email" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="AssignedPersonId" class="form-label">Assigned Person</label>
-                                    <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.AssignedPersonId">
-                                        <option value="">-- Select Person --</option>
-                                    </select>
-                                    <span asp-validation-for="AssignedPersonId" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="AssignedEntraUserId" class="form-label">Assigned Entra User</label>
-                                    <select asp-for="AssignedEntraUserId" class="form-select" asp-items="ViewBag.AssignedEntraUserId">
-                                        <option value="">-- Select Entra User --</option>
-                                    </select>
-                                    <span asp-validation-for="AssignedEntraUserId" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="OS_Version" class="form-label">OS Version</label>
-                                    <input asp-for="OS_Version" class="form-control" placeholder="Enter OS Version" />
-                                    <span asp-validation-for="OS_Version" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="IP_Address" class="form-label">IP Address</label>
-                                    <input asp-for="IP_Address" class="form-control" placeholder="Enter IP Address" />
-                                    <span asp-validation-for="IP_Address" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Current_Location_Notes" class="form-label">Location Notes</label>
-                            <textarea asp-for="Current_Location_Notes" class="form-control" rows="3" placeholder="Enter any additional location notes"></textarea>
-                            <span asp-validation-for="Current_Location_Notes" class="text-danger"></span>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Create Equipment
-                            </button>
-                        </div>
-                    </form>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary btn-navigation" onclick="previousStep()">
+                            <i class="bi bi-arrow-left me-1"></i> Previous
+                        </button>
+                        <button type="button" class="btn btn-primary btn-navigation" onclick="nextStep()">
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <!-- Step 5: Review & Save -->
+        <div class="form-card" id="step5">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-info-circle"></i> Quick Tips
-                    </h5>
+                    <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Review & Save</h5>
                 </div>
                 <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>OATH Tag:</strong> Required unique identifier
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>Category:</strong> Helps organize equipment
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>Status:</strong> Tracks equipment lifecycle
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>Location:</strong> Physical location tracking
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>Assignment:</strong> Link to users or personnel
-                        </li>
-                    </ul>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Please review all the information below before saving the equipment record.
+                    </div>
+
+                    <div id="summary-content">
+                        <!-- Summary will be populated by JavaScript -->
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary btn-navigation" onclick="previousStep()">
+                            <i class="bi bi-arrow-left me-1"></i> Previous
+                        </button>
+                        <button type="submit" class="btn btn-success btn-navigation">
+                            <i class="bi bi-check-lg me-1"></i> Save Equipment
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            
+            // Update step indicators
+            for (let i = 1; i <= totalSteps; i++) {
+                const indicator = document.getElementById(`step${i}-indicator`);
+                if (i < currentStep) {
+                    indicator.className = 'step-indicator completed';
+                } else if (i === currentStep) {
+                    indicator.className = 'step-indicator active';
+                } else {
+                    indicator.className = 'step-indicator pending';
+                }
+            }
+        }
+
+        function showStep(step) {
+            // Hide all steps
+            for (let i = 1; i <= totalSteps; i++) {
+                document.getElementById(`step${i}`).classList.remove('active');
+            }
+            
+            // Show current step
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            // Update progress
+            updateProgress();
+            
+            // Generate summary if on last step
+            if (step === 5) {
+                generateSummary();
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        function generateSummary() {
+            const form = document.getElementById('equipment-form');
+            const formData = new FormData(form);
+            let summaryHtml = '';
+
+            // Equipment Details
+            summaryHtml += '<div class="form-section"><h5>Equipment Details</h5>';
+            if (formData.get('OATH_Tag')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">OATH Tag:</span> <span class="summary-value">${formData.get('OATH_Tag')}</span></div>`;
+            }
+            if (formData.get('Serial_Number')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Serial Number:</span> <span class="summary-value">${formData.get('Serial_Number')}</span></div>`;
+            }
+            if (formData.get('Manufacturer')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Manufacturer:</span> <span class="summary-value">${formData.get('Manufacturer')}</span></div>`;
+            }
+            if (formData.get('Model')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Model:</span> <span class="summary-value">${formData.get('Model')}</span></div>`;
+            }
+            summaryHtml += '</div>';
+
+            // People & Assignment
+            summaryHtml += '<div class="form-section"><h5>People & Assignment</h5>';
+            if (formData.get('Assigned_User_Name')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Assigned User:</span> <span class="summary-value">${formData.get('Assigned_User_Name')}</span></div>`;
+            }
+            if (formData.get('Department')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Department:</span> <span class="summary-value">${formData.get('Department')}</span></div>`;
+            }
+            summaryHtml += '</div>';
+
+            // Tech Configuration
+            summaryHtml += '<div class="form-section"><h5>Tech Configuration</h5>';
+            if (formData.get('Computer_Name')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Computer Name:</span> <span class="summary-value">${formData.get('Computer_Name')}</span></div>`;
+            }
+            summaryHtml += '</div>';
+
+            // Location & Finance
+            summaryHtml += '<div class="form-section"><h5>Location & Finance</h5>';
+            if (formData.get('PurchasePrice')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Purchase Price:</span> <span class="summary-value">$${formData.get('PurchasePrice')}</span></div>`;
+            }
+            if (formData.get('PurchaseDate')) {
+                summaryHtml += `<div class="summary-item"><span class="summary-label">Purchase Date:</span> <span class="summary-value">${formData.get('PurchaseDate')}</span></div>`;
+            }
+            summaryHtml += '</div>';
+
+            document.getElementById('summary-content').innerHTML = summaryHtml;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+        });
+    </script>
 }

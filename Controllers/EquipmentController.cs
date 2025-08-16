@@ -17,7 +17,7 @@ namespace AssetManagement.Controllers
         // GET: Equipment
         public async Task<IActionResult> Index(string searchString, string sortOrder, int? pageNumber, int? pageSize, 
             string? categoryFilter, string? statusFilter, string? departmentFilter, 
-            string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? netNameFilter, string? modelFilter)
+            string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? floorFilter, string? netNameFilter, string? modelFilter, string? serialNumberFilter)
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["OATHTagSortParm"] = String.IsNullOrEmpty(sortOrder) ? "oath_tag_desc" : "";
@@ -25,9 +25,11 @@ namespace AssetManagement.Controllers
             ViewData["ModelSortParm"] = sortOrder == "model" ? "model_desc" : "model";
             ViewData["StatusSortParm"] = sortOrder == "status" ? "status_desc" : "status";
             ViewData["LocationSortParm"] = sortOrder == "location" ? "location_desc" : "location";
+            ViewData["FloorSortParm"] = sortOrder == "floor" ? "floor_desc" : "floor";
             ViewData["AssignedToSortParm"] = sortOrder == "assigned" ? "assigned_desc" : "assigned";
             ViewData["CategorySortParm"] = sortOrder == "category" ? "category_desc" : "category";
             ViewData["DepartmentSortParm"] = sortOrder == "department" ? "department_desc" : "department";
+            ViewData["SerialNumberSortParm"] = sortOrder == "serialnumber" ? "serialnumber_desc" : "serialnumber";
             ViewData["CurrentFilter"] = searchString;
             ViewData["CategoryFilter"] = categoryFilter;
             ViewData["StatusFilter"] = statusFilter;
@@ -35,8 +37,10 @@ namespace AssetManagement.Controllers
             ViewData["OathTagFilter"] = oathTagFilter;
             ViewData["AssignedToFilter"] = assignedToFilter;
             ViewData["LocationFilter"] = locationFilter;
+            ViewData["FloorFilter"] = floorFilter;
             ViewData["NetNameFilter"] = netNameFilter;
             ViewData["ModelFilter"] = modelFilter;
+            ViewData["SerialNumberFilter"] = serialNumberFilter;
             
             // Page size options
             var pageSizeOptions = new List<int> { 10, 25, 50, 100 };
@@ -65,7 +69,8 @@ namespace AssetManagement.Controllers
                                                 e.Model.Contains(searchString) ||
                                                 e.Manufacturer.Contains(searchString) ||
                                                 e.Department.Contains(searchString) ||
-                                                e.Facility.Contains(searchString) ||
+                                                (e.CurrentLocation != null && e.CurrentLocation.Name.Contains(searchString)) ||
+                                                (e.AssetCategory != null && e.AssetCategory.Name.Contains(searchString)) ||
                                                 (e.TechnologyConfiguration != null && e.TechnologyConfiguration.NetName.Contains(searchString)));
             }
 
@@ -99,10 +104,16 @@ namespace AssetManagement.Controllers
                 equipment = equipment.Where(e => e.Assigned_User_Name == assignedToFilter);
             }
 
-            // Apply Location filter
+            // Apply Location filter (Building only)
             if (!String.IsNullOrEmpty(locationFilter))
             {
-                equipment = equipment.Where(e => e.CurrentLocation != null && e.CurrentLocation.Name == locationFilter);
+                equipment = equipment.Where(e => e.CurrentLocation != null && e.CurrentLocation.Name.StartsWith(locationFilter));
+            }
+
+            // Apply Floor filter
+            if (!String.IsNullOrEmpty(floorFilter))
+            {
+                equipment = equipment.Where(e => e.CurrentFloorPlan != null && e.CurrentFloorPlan.FloorName == floorFilter);
             }
 
             // Apply Net Name filter
@@ -119,6 +130,12 @@ namespace AssetManagement.Controllers
                 equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Model) && e.Model == modelFilter);
             }
 
+            // Apply Serial Number filter
+            if (!String.IsNullOrEmpty(serialNumberFilter))
+            {
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Serial_Number) && e.Serial_Number == serialNumberFilter);
+            }
+
 
 
             equipment = sortOrder switch
@@ -130,14 +147,18 @@ namespace AssetManagement.Controllers
                 "model_desc" => equipment.OrderByDescending(e => e.Model),
                 "status" => equipment.OrderBy(e => e.CurrentStatus.Name),
                 "status_desc" => equipment.OrderByDescending(e => e.CurrentStatus.Name),
-                "location" => equipment.OrderBy(e => e.CurrentLocation.Name),
-                "location_desc" => equipment.OrderByDescending(e => e.CurrentLocation.Name),
-                "assigned" => equipment.OrderBy(e => e.Assigned_User_Name),
+                            "location" => equipment.OrderBy(e => e.CurrentLocation.Name),
+            "location_desc" => equipment.OrderByDescending(e => e.CurrentLocation.Name),
+            "floor" => equipment.OrderBy(e => e.CurrentFloorPlan != null ? e.CurrentFloorPlan.FloorName : ""),
+            "floor_desc" => equipment.OrderByDescending(e => e.CurrentFloorPlan != null ? e.CurrentFloorPlan.FloorName : ""),
+            "assigned" => equipment.OrderBy(e => e.Assigned_User_Name),
                 "assigned_desc" => equipment.OrderByDescending(e => e.Assigned_User_Name),
                 "category" => equipment.OrderBy(e => e.AssetCategory.Name),
                 "category_desc" => equipment.OrderByDescending(e => e.AssetCategory.Name),
                 "department" => equipment.OrderBy(e => e.Department),
                 "department_desc" => equipment.OrderByDescending(e => e.Department),
+                "serialnumber" => equipment.OrderBy(e => e.Serial_Number),
+                "serialnumber_desc" => equipment.OrderByDescending(e => e.Serial_Number),
                 _ => equipment.OrderBy(e => e.OATH_Tag),
             };
 
@@ -177,12 +198,26 @@ namespace AssetManagement.Controllers
                 .OrderBy(a => a)
                 .ToListAsync();
 
-            // Get Location options
-            ViewData["LocationOptions"] = await _context.Equipment
+            // Get Location options (Building only)
+            var locationNames = await _context.Equipment
                 .Where(e => e.CurrentLocation != null)
                 .Select(e => e.CurrentLocation.Name)
                 .Distinct()
                 .OrderBy(l => l)
+                .ToListAsync();
+            
+            ViewData["LocationOptions"] = locationNames
+                .Select(name => name.Split(" - ")[0])
+                .Distinct()
+                .OrderBy(l => l)
+                .ToList();
+
+            // Get Floor options
+            ViewData["FloorOptions"] = await _context.Equipment
+                .Where(e => e.CurrentFloorPlan != null)
+                .Select(e => e.CurrentFloorPlan.FloorName)
+                .Distinct()
+                .OrderBy(f => f)
                 .ToListAsync();
 
             // Get Net Name options
@@ -199,6 +234,14 @@ namespace AssetManagement.Controllers
                 .Select(e => e.Model)
                 .Distinct()
                 .OrderBy(m => m)
+                .ToListAsync();
+
+            // Get Serial Number options
+            ViewData["SerialNumberOptions"] = await _context.Equipment
+                .Where(e => !String.IsNullOrEmpty(e.Serial_Number))
+                .Select(e => e.Serial_Number)
+                .Distinct()
+                .OrderBy(s => s)
                 .ToListAsync();
 
             int currentPageSize = pageSize ?? 20;
@@ -644,80 +687,7 @@ namespace AssetManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: Equipment/UpdateField/5
-        [HttpPost]
-        public async Task<IActionResult> UpdateField(int id, [FromBody] UpdateFieldRequest request)
-        {
-            try
-            {
-                var equipment = await _context.Equipment.FindAsync(id);
-                if (equipment == null)
-                {
-                    return Json(new { success = false, message = "Equipment not found" });
-                }
 
-                // Use reflection to update the field
-                var property = typeof(Equipment).GetProperty(request.FieldName);
-                if (property == null)
-                {
-                    return Json(new { success = false, message = "Field not found" });
-                }
-
-                // Check if the property is writable
-                if (!property.CanWrite)
-                {
-                    return Json(new { success = false, message = "Field is read-only" });
-                }
-
-                // Convert and set the value
-                object? convertedValue = null;
-                if (!string.IsNullOrEmpty(request.FieldValue))
-                {
-                    if (property.PropertyType == typeof(string))
-                    {
-                        convertedValue = request.FieldValue;
-                    }
-                    else if (property.PropertyType == typeof(int?) || property.PropertyType == typeof(int))
-                    {
-                        if (int.TryParse(request.FieldValue, out int intValue))
-                            convertedValue = intValue;
-                    }
-                    else if (property.PropertyType == typeof(decimal?) || property.PropertyType == typeof(decimal))
-                    {
-                        if (decimal.TryParse(request.FieldValue, out decimal decimalValue))
-                            convertedValue = decimalValue;
-                    }
-                    else if (property.PropertyType == typeof(DateTime?) || property.PropertyType == typeof(DateTime))
-                    {
-                        if (DateTime.TryParse(request.FieldValue, out DateTime dateValue))
-                            convertedValue = dateValue;
-                    }
-                    else
-                    {
-                        convertedValue = request.FieldValue;
-                    }
-                }
-
-                // Set the value
-                property.SetValue(equipment, convertedValue);
-                
-                // Update audit fields
-                equipment.UpdatedAt = DateTime.UtcNow;
-                equipment.UpdatedBy = User.Identity?.Name ?? "System";
-
-                // Save changes
-                await _context.SaveChangesAsync();
-
-                // Log the change
-                await LogEquipmentAction(id, "Field Updated", $"Updated {request.FieldName} to: {request.FieldValue ?? "(empty)"}");
-
-                return Json(new { success = true, message = "Field updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = ex.Message });
-            }
-        }
 
         private bool EquipmentExists(int id)
         {
@@ -860,6 +830,246 @@ namespace AssetManagement.Controllers
                 await _context.SaveChangesAsync();
             }
         }
+
+        // DataTable Inline Editing
+        [HttpPost]
+        [Route("Equipment/UpdateField")]
+        public async Task<IActionResult> UpdateField([FromBody] InlineEditRequest request)
+        {
+            try
+            {
+                // Debug logging
+                Console.WriteLine($"UpdateField called with ID: {request.Id}, Field: {request.Field}, Value: {request.Value}");
+                
+                // Try to find equipment by OATH tag first, then by ID
+                var equipment = await _context.Equipment
+                    .Include(e => e.TechnologyConfiguration)
+                    .FirstOrDefaultAsync(e => e.OATH_Tag == request.Id || e.Id.ToString() == request.Id);
+                
+                Console.WriteLine($"Looking for equipment with OATH Tag or ID: {request.Id}");
+                Console.WriteLine($"Equipment found: {equipment != null}");
+                
+                if (equipment == null)
+                {
+                    // Get some sample equipment for debugging
+                    var sampleEquipment = await _context.Equipment.Take(10).Select(e => new { e.Id, e.OATH_Tag }).ToListAsync();
+                    Console.WriteLine($"Sample equipment in database: {string.Join(", ", sampleEquipment.Select(e => $"{e.Id}({e.OATH_Tag})"))}");
+                    
+                    return Json(new InlineEditResponse { 
+                        Success = false, 
+                        Message = $"Equipment with OATH Tag/ID {request.Id} not found. Sample equipment: {string.Join(", ", sampleEquipment.Select(e => $"{e.OATH_Tag}(ID:{e.Id})"))}. Please refresh the page and try again." 
+                    });
+                }
+
+                var originalEquipment = new Equipment
+                {
+                    Id = equipment.Id,
+                    CurrentStatusId = equipment.CurrentStatusId,
+                    CurrentLocationId = equipment.CurrentLocationId,
+                    AssignedPersonId = equipment.AssignedPersonId
+                };
+
+                switch (request.Field.ToLower())
+                {
+                    case "oath_tag":
+                        var newOathTag = request.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(newOathTag))
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "OATH Tag cannot be empty" });
+                        }
+                        
+                        // Check if OATH Tag already exists (excluding current equipment)
+                        var existingEquipment = await _context.Equipment
+                            .FirstOrDefaultAsync(e => e.OATH_Tag == newOathTag && e.Id != equipment.Id);
+                        if (existingEquipment != null)
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "OATH Tag already exists" });
+                        }
+                        
+                        equipment.OATH_Tag = newOathTag;
+                        await LogEquipmentAction(equipment.Id, "OATH Tag Updated", $"OATH Tag set to {request.Value}");
+                        break;
+
+                    case "assigned_user_name":
+                        equipment.Assigned_User_Name = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Assigned User Updated", $"Assigned user set to {request.Value}");
+                        break;
+
+                    case "assetcategoryid":
+                        // Find the category by name
+                        var categoryName = request.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(categoryName))
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Category cannot be empty" });
+                        }
+                        
+                        var category = await _context.AssetCategories
+                            .FirstOrDefaultAsync(c => c.Name == categoryName && c.IsActive);
+                        if (category == null)
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = $"Category '{categoryName}' not found" });
+                        }
+                        
+                        equipment.AssetCategoryId = category.Id;
+                        await LogEquipmentAction(equipment.Id, "Category Updated", $"Category set to {categoryName}");
+                        break;
+
+                    case "department":
+                        equipment.Department = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Department Updated", $"Department set to {request.Value}");
+                        break;
+
+                    case "model":
+                        equipment.Model = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Model Updated", $"Model set to {request.Value}");
+                        break;
+
+                    case "serial_number":
+                        equipment.Serial_Number = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Serial Number Updated", $"Serial number set to {request.Value}");
+                        break;
+
+                    case "currentstatusid":
+                        if (int.TryParse(request.Value?.ToString(), out int statusId))
+                        {
+                            var status = await _context.AssetStatuses.FindAsync(statusId);
+                            if (status != null)
+                            {
+                                equipment.CurrentStatusId = statusId;
+                                await LogEquipmentAction(equipment.Id, "Status Changed", $"Status set to {status.Name}");
+                            }
+                            else
+                            {
+                                return Json(new InlineEditResponse { Success = false, Message = "Invalid status" });
+                            }
+                        }
+                        else
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Invalid status value" });
+                        }
+                        break;
+
+                    case "netname":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.NetName = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Net Name Updated", $"Net name set to {request.Value}");
+                        break;
+
+                    default:
+                        return Json(new InlineEditResponse { Success = false, Message = $"Field '{request.Field}' is not editable" });
+                }
+
+                equipment.UpdatedAt = DateTime.UtcNow;
+                equipment.UpdatedBy = User.Identity?.Name ?? "System";
+
+                await _context.SaveChangesAsync();
+                await LogEquipmentChanges(originalEquipment, equipment);
+
+                return Json(new InlineEditResponse 
+                { 
+                    Success = true, 
+                    Message = "Field updated successfully",
+                    NewValue = request.Value
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new InlineEditResponse { Success = false, Message = $"Error updating field: {ex.Message}" });
+            }
+        }
+
+        // Bulk Actions
+        [HttpPost("BulkSetStatus")]
+        public async Task<IActionResult> BulkSetStatus([FromBody] BulkActionRequest request)
+        {
+            try
+            {
+                if (request.Ids == null || !request.Ids.Any())
+                {
+                    return Json(new { Success = false, Message = "No equipment selected" });
+                }
+
+                if (!int.TryParse(request.Value, out int statusId))
+                {
+                    return Json(new { Success = false, Message = "Invalid status value" });
+                }
+
+                var status = await _context.AssetStatuses.FindAsync(statusId);
+                if (status == null)
+                {
+                    return Json(new { Success = false, Message = "Status not found" });
+                }
+
+                var equipmentList = await _context.Equipment
+                    .Where(e => request.Ids.Contains(e.Id))
+                    .ToListAsync();
+
+                foreach (var equipment in equipmentList)
+                {
+                    equipment.CurrentStatusId = statusId;
+                    equipment.UpdatedAt = DateTime.UtcNow;
+                    equipment.UpdatedBy = User.Identity?.Name ?? "System";
+                    await LogEquipmentAction(equipment.Id, "Bulk Status Change", $"Status set to {status.Name}");
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { Success = true, Message = $"Updated status for {equipmentList.Count} equipment items" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = $"Error updating status: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("ExportSelected")]
+        public async Task<IActionResult> ExportSelected([FromBody] BulkActionRequest request)
+        {
+            try
+            {
+                if (request.Ids == null || !request.Ids.Any())
+                {
+                    return Json(new { Success = false, Message = "No equipment selected" });
+                }
+
+                var equipmentList = await _context.Equipment
+                    .Include(e => e.AssetCategory)
+                    .Include(e => e.CurrentStatus)
+                    .Include(e => e.CurrentLocation)
+                    .Include(e => e.CurrentFloorPlan)
+                    .Include(e => e.TechnologyConfiguration)
+                    .Where(e => request.Ids.Contains(e.Id))
+                    .ToListAsync();
+
+                // Generate CSV content
+                var csvContent = "OATH Tag,Serial Number,Model,Category,Status,Location,Assigned To,Net Name,Manufacturer,Purchase Date\n";
+                
+                foreach (var equipment in equipmentList)
+                {
+                    csvContent += $"\"{equipment.OATH_Tag}\",\"{equipment.Serial_Number ?? ""}\",\"{equipment.Model ?? ""}\",\"{equipment.AssetCategory?.Name ?? ""}\",\"{equipment.CurrentStatus?.Name ?? ""}\",\"{equipment.CurrentLocation?.Name ?? ""}\",\"{equipment.Assigned_User_Name ?? ""}\",\"{equipment.TechnologyConfiguration?.NetName ?? ""}\",\"{equipment.Manufacturer ?? ""}\",\"{equipment.PurchaseDate?.ToString("MM/dd/yyyy") ?? ""}\"\n";
+                }
+
+                var fileName = $"equipment_export_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                var bytes = System.Text.Encoding.UTF8.GetBytes(csvContent);
+
+                return File(bytes, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = $"Error exporting data: {ex.Message}" });
+            }
+        }
     }
 
     public class PaginatedList<T> : List<T>
@@ -888,9 +1098,11 @@ namespace AssetManagement.Controllers
         }
     }
 
-    public class UpdateFieldRequest
+
+
+    public class BulkActionRequest
     {
-        public string FieldName { get; set; } = string.Empty;
-        public string? FieldValue { get; set; }
+        public List<int>? Ids { get; set; }
+        public string? Value { get; set; }
     }
 }
