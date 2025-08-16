@@ -4,6 +4,8 @@
     ViewData["Title"] = "Technology Configuration";
 }
 
+@Html.AntiForgeryToken()
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -19,7 +21,7 @@
                 <div class="col-md-6">
                     <form asp-action="Index" method="get" class="d-flex">
                         <input type="search" name="searchString" value="@ViewData["CurrentFilter"]" 
-                               class="form-control me-2" placeholder="Search by Net Name, IP, MAC, Equipment..." 
+                               class="form-control me-2" placeholder="Master search across all columns..." 
                                id="searchInput" autocomplete="off">
                         <button type="submit" class="btn btn-outline-secondary">
                             <i class="bi bi-search"></i>
@@ -31,7 +33,7 @@
                             </a>
                         }
                     </form>
-                    <div id="searchSuggestions" class="position-absolute bg-white border rounded shadow-sm" style="z-index: 1000; display: none; width: 300px;"></div>
+                    <div id="searchSuggestions" class="position-absolute bg-white border rounded shadow-sm" style="z-index: 1000; display: none; width: 400px; max-height: 300px; overflow-y: auto;"></div>
                 </div>
                 <div class="col-md-6 text-end">
                     <div class="d-inline-flex align-items-center">
@@ -52,25 +54,341 @@
                     <thead class="table-dark">
                         <tr>
                             <th>
-                                <a asp-action="Index" asp-route-sortOrder="@ViewData["EquipmentSortParm"]" 
-                                   asp-route-currentFilter="@ViewData["CurrentFilter"]" 
-                                   asp-route-pageSize="@ViewData["CurrentPageSize"]"
-                                   class="text-white text-decoration-none">
-                                    Equipment @if(ViewData["CurrentSort"]?.ToString() == "equipment") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "equipment_desc") { <i class="bi bi-arrow-down"></i> }
-                                </a>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["EquipmentSortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                       asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                       asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                       asp-route-macFilter="@ViewData["MACFilter"]"
+                                       asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                       asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        Equipment @if(ViewData["CurrentSort"]?.ToString() == "equipment") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "equipment_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["EquipmentFilter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search Equipment..." onkeyup="filterDropdownItems(this, 'equipment-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="equipment-filter-items">
+                                                @foreach (var equipment in ViewData["EquipmentOptions"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["EquipmentFilter"]?.ToString() == equipment;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                                           asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                                           asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                                           asp-route-macFilter="@ViewData["MACFilter"]"
+                                                           asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                                           asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                                           asp-route-equipmentFilter="@(isSelected ? "" : equipment)">
+                                                            @equipment
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
                             </th>
                             <th>
-                                <a asp-action="Index" asp-route-sortOrder="@ViewData["NetNameSortParm"]" 
-                                   asp-route-currentFilter="@ViewData["CurrentFilter"]" 
-                                   asp-route-pageSize="@ViewData["CurrentPageSize"]"
-                                   class="text-white text-decoration-none">
-                                    Net Name @if(ViewData["CurrentSort"]?.ToString() == "netname") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "netname_desc") { <i class="bi bi-arrow-down"></i> }
-                                </a>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["WallPortSortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                       asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                       asp-route-macFilter="@ViewData["MACFilter"]"
+                                       asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                       asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        Wall Port @if(ViewData["CurrentSort"]?.ToString() == "wallport") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "wallport_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["WallPortFilter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search Wall Port..." onkeyup="filterDropdownItems(this, 'wallport-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="wallport-filter-items">
+                                                @foreach (var wallPort in ViewData["WallPortOptions"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["WallPortFilter"]?.ToString() == wallPort;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                                           asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                                           asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                                           asp-route-macFilter="@ViewData["MACFilter"]"
+                                                           asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                                           asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                                           asp-route-wallPortFilter="@(isSelected ? "" : wallPort)">
+                                                            @wallPort
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
                             </th>
-                            <th>IPv4 Address</th>
-                            <th>MAC Address</th>
-                            <th>Switch/Port</th>
-                            <th>Phone</th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["NetNameSortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                       asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                       asp-route-macFilter="@ViewData["MACFilter"]"
+                                       asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                       asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        Net Name @if(ViewData["CurrentSort"]?.ToString() == "netname") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "netname_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["NetNameFilter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search Net Name..." onkeyup="filterDropdownItems(this, 'netname-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="netname-filter-items">
+                                                @foreach (var netName in ViewData["NetNameOptions"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["NetNameFilter"]?.ToString() == netName;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                                           asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                                           asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                                           asp-route-macFilter="@ViewData["MACFilter"]"
+                                                           asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                                           asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                                           asp-route-netNameFilter="@(isSelected ? "" : netName)">
+                                                            @netName
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["IPv4SortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                       asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                       asp-route-macFilter="@ViewData["MACFilter"]"
+                                       asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                       asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        IPv4 Address @if(ViewData["CurrentSort"]?.ToString() == "ipv4") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "ipv4_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["IPv4Filter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search IPv4..." onkeyup="filterDropdownItems(this, 'ipv4-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="ipv4-filter-items">
+                                                @foreach (var ipv4 in ViewData["IPv4Options"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["IPv4Filter"]?.ToString() == ipv4;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                                           asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                                           asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                                           asp-route-macFilter="@ViewData["MACFilter"]"
+                                                           asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                                           asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                                           asp-route-ipv4Filter="@(isSelected ? "" : ipv4)">
+                                                            @ipv4
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["MACSortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                       asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                       asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                       asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                       asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        MAC Address @if(ViewData["CurrentSort"]?.ToString() == "mac") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "mac_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["MACFilter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search MAC..." onkeyup="filterDropdownItems(this, 'mac-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="mac-filter-items">
+                                                @foreach (var mac in ViewData["MACOptions"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["MACFilter"]?.ToString() == mac;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                                           asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                                           asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                                           asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                                           asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                                           asp-route-macFilter="@(isSelected ? "" : mac)">
+                                                            @mac
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["SwitchPortSortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                       asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                       asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                       asp-route-macFilter="@ViewData["MACFilter"]"
+                                       asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        Switch/Port @if(ViewData["CurrentSort"]?.ToString() == "switchport") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "switchport_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["SwitchPortFilter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search Switch/Port..." onkeyup="filterDropdownItems(this, 'switchport-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="switchport-filter-items">
+                                                @foreach (var switchPort in ViewData["SwitchPortOptions"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["SwitchPortFilter"]?.ToString() == switchPort;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                                           asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                                           asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                                           asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                                           asp-route-macFilter="@ViewData["MACFilter"]"
+                                                           asp-route-phoneFilter="@ViewData["PhoneFilter"]"
+                                                           asp-route-switchPortFilter="@(isSelected ? "" : switchPort)">
+                                                            @switchPort
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <a asp-action="Index" asp-route-sortOrder="@ViewData["PhoneSortParm"]" 
+                                       asp-route-currentFilter="@ViewData["CurrentFilter"]" 
+                                       asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                       asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                       asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                       asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                       asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                       asp-route-macFilter="@ViewData["MACFilter"]"
+                                       asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                       class="text-white text-decoration-none me-2">
+                                        Phone @if(ViewData["CurrentSort"]?.ToString() == "phone") { <i class="bi bi-arrow-up"></i> } else if(ViewData["CurrentSort"]?.ToString() == "phone_desc") { <i class="bi bi-arrow-down"></i> }
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-light filter-button @(ViewData["PhoneFilter"]?.ToString() != null ? "active" : "")" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-funnel"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><div class="px-3 py-2"><input type="text" class="form-control form-control-sm" placeholder="Search Phone..." onkeyup="filterDropdownItems(this, 'phone-filter-items')"></div></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <div id="phone-filter-items">
+                                                @foreach (var phone in ViewData["PhoneOptions"] as List<string> ?? new List<string>())
+                                                {
+                                                    var isSelected = ViewData["PhoneFilter"]?.ToString() == phone;
+                                                    <li class="filter-item">
+                                                        <a class="dropdown-item @(isSelected ? "active" : "")" 
+                                                           asp-action="Index" 
+                                                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                                           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                                           asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                                           asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                                           asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                                           asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                                           asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                                           asp-route-macFilter="@ViewData["MACFilter"]"
+                                                           asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                                           asp-route-phoneFilter="@(isSelected ? "" : phone)">
+                                                            @phone
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </div>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </th>
                             <th>Last Updated</th>
                             <th>Actions</th>
                         </tr>
@@ -82,15 +400,16 @@
                                 <td>
                                     @if (item.Equipment != null)
                                     {
-                                        <strong>@item.Equipment.OATH_Tag</strong><br>
-                                        <small class="text-muted">@item.Equipment.Model</small>
+                                        <strong data-field="Equipment.OATH_Tag" data-id="@item.Id" class="editable-field">@item.Equipment.OATH_Tag</strong><br>
+                                        <small class="text-muted" data-field="Equipment.Model" data-id="@item.Id" class="editable-field">@item.Equipment.Model</small>
                                     }
                                     else
                                     {
                                         <span class="text-muted">Equipment not found</span>
                                     }
                                 </td>
-                                <td>
+                                <td data-field="WallPort" data-id="@item.Id" class="editable-field">@(item.WallPort ?? "-")</td>
+                                <td data-field="NetName" data-id="@item.Id" class="editable-field">
                                     @if (!string.IsNullOrEmpty(item.NetName))
                                     {
                                         <strong>@item.NetName</strong>
@@ -100,8 +419,8 @@
                                         <span class="text-muted">-</span>
                                     }
                                 </td>
-                                <td>@(item.IPv4Address ?? "-")</td>
-                                <td>
+                                <td data-field="IPv4Address" data-id="@item.Id" class="editable-field">@(item.IPv4Address ?? "-")</td>
+                                <td data-field="MACAddress" data-id="@item.Id" class="editable-field">
                                     @if (!string.IsNullOrEmpty(item.MACAddress))
                                     {
                                         <code>@item.MACAddress</code>
@@ -111,7 +430,7 @@
                                         <span class="text-muted">-</span>
                                     }
                                 </td>
-                                <td>
+                                <td data-field="SwitchPort" data-id="@item.Id" class="editable-field">
                                     @if (!string.IsNullOrEmpty(item.SwitchName) || !string.IsNullOrEmpty(item.SwitchPort))
                                     {
                                         @(item.SwitchName ?? "")@(!string.IsNullOrEmpty(item.SwitchName) && !string.IsNullOrEmpty(item.SwitchPort) ? "/" : "")@(item.SwitchPort ?? "")
@@ -121,7 +440,7 @@
                                         <span class="text-muted">-</span>
                                     }
                                 </td>
-                                <td>
+                                <td data-field="PhoneNumber" data-id="@item.Id" class="editable-field">
                                     @if (!string.IsNullOrEmpty(item.PhoneNumber))
                                     {
                                         @item.PhoneNumber@(!string.IsNullOrEmpty(item.Extension) ? $" x{item.Extension}" : "")
@@ -172,10 +491,185 @@
                 </div>
             }
 
-            <!-- Pagination will be added later -->
+            <!-- Pagination -->
+            @if (ViewData["TotalPages"] != null && (int)ViewData["TotalPages"] > 1)
+            {
+                <nav aria-label="Technology Configuration pagination">
+                    <ul class="pagination justify-content-center">
+                        @{
+                            var currentPage = (int)ViewData["CurrentPage"];
+                            var totalPages = (int)ViewData["TotalPages"];
+                            var startPage = Math.Max(1, currentPage - 2);
+                            var endPage = Math.Min(totalPages, currentPage + 2);
+                        }
+
+                        <!-- Previous page -->
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-pageNumber="@(currentPage - 1)"
+                                   asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                   asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                   asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                   asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                   asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                   asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                   asp-route-macFilter="@ViewData["MACFilter"]"
+                                   asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                   asp-route-phoneFilter="@ViewData["PhoneFilter"]">
+                                    Previous
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Page numbers -->
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-pageNumber="@i"
+                                   asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                   asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                   asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                   asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                   asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                   asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                   asp-route-macFilter="@ViewData["MACFilter"]"
+                                   asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                   asp-route-phoneFilter="@ViewData["PhoneFilter"]">
+                                    @i
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Next page -->
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-pageNumber="@(currentPage + 1)"
+                                   asp-route-pageSize="@ViewData["CurrentPageSize"]"
+                                   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                                   asp-route-sortOrder="@ViewData["CurrentSort"]"
+                                   asp-route-equipmentFilter="@ViewData["EquipmentFilter"]"
+                                   asp-route-wallPortFilter="@ViewData["WallPortFilter"]"
+                                   asp-route-netNameFilter="@ViewData["NetNameFilter"]"
+                                   asp-route-ipv4Filter="@ViewData["IPv4Filter"]"
+                                   asp-route-macFilter="@ViewData["MACFilter"]"
+                                   asp-route-switchPortFilter="@ViewData["SwitchPortFilter"]"
+                                   asp-route-phoneFilter="@ViewData["PhoneFilter"]">
+                                    Next
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+
+                <!-- Results summary -->
+                <div class="text-center text-muted">
+                    @{
+                        var startRecord = ((currentPage - 1) * (int)ViewData["CurrentPageSize"]) + 1;
+                        var endRecord = Math.Min(currentPage * (int)ViewData["CurrentPageSize"], (int)ViewData["TotalCount"]);
+                        var totalRecords = (int)ViewData["TotalCount"];
+                    }
+                    @if (totalRecords > 0)
+                    {
+                        <span>Showing @startRecord to @endRecord of @totalRecords results</span>
+                    }
+                    else
+                    {
+                        <span>No results found</span>
+                    }
+                </div>
+            }
         </div>
     </div>
 </div>
+
+<style>
+    .filter-button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 0.25rem;
+    }
+    
+    .filter-button.active {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+    
+    .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .dropdown-item.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .table th {
+        white-space: nowrap;
+        vertical-align: top;
+    }
+    
+    .dropdown-menu input[type="text"] {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    
+    .filter-item {
+        display: block;
+    }
+
+    /* Inline editing styles */
+    .editable-field {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .editable-field:hover {
+        background-color: #f8f9fa;
+        border-radius: 3px;
+        padding: 2px 4px;
+    }
+
+    .editable-field.editing {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 3px;
+        padding: 2px 4px;
+    }
+
+    .edit-input {
+        width: 100%;
+        border: 1px solid #007bff;
+        border-radius: 3px;
+        padding: 2px 4px;
+        font-size: inherit;
+        background-color: white;
+    }
+
+    .edit-input:focus {
+        outline: none;
+        border-color: #0056b3;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    /* Toast animations */
+    @@keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @@keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+</style>
 
 @section Scripts {
     <script>
@@ -188,11 +682,48 @@
             window.location.href = url.toString();
         });
 
-        // Search autocomplete functionality
+        // Filter dropdown items
+        function filterDropdownItems(input, containerId) {
+            const searchTerm = input.value.toLowerCase();
+            const container = document.getElementById(containerId);
+            const items = container.querySelectorAll('.filter-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Prevent dropdown from closing when clicking on search input
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownInputs = document.querySelectorAll('.dropdown-menu input[type="text"]');
+            dropdownInputs.forEach(input => {
+                input.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+        });
+
+        // Enhanced search autocomplete functionality
         let searchTimeout;
         const searchInput = document.getElementById('searchInput');
         const searchSuggestions = document.getElementById('searchSuggestions');
         let selectedIndex = -1;
+
+        // Initialize page size selector with current value
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPageSize = '@ViewData["CurrentPageSize"]';
+            if (currentPageSize && currentPageSize !== '') {
+                const pageSizeSelect = document.getElementById('pageSizeSelect');
+                if (pageSizeSelect) {
+                    pageSizeSelect.value = currentPageSize;
+                }
+            }
+        });
 
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
@@ -230,7 +761,7 @@
 
         async function fetchSearchSuggestions(query) {
             try {
-                const response = await fetch(`/TechnologyConfiguration/GetSearchSuggestions?query=${encodeURIComponent(query)}`);
+                const response = await fetch(`/TechnologyConfiguration/SearchSuggestions?term=${encodeURIComponent(query)}`);
                 const suggestions = await response.json();
                 displaySearchSuggestions(suggestions);
             } catch (error) {
@@ -275,5 +806,201 @@
                 searchSuggestions.style.display = 'none';
             }
         });
+
+        // Inline editing functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const editableFields = document.querySelectorAll('.editable-field');
+            
+            editableFields.forEach(field => {
+                field.addEventListener('dblclick', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startEditing(this);
+                });
+            });
+        });
+
+        function startEditing(element) {
+            // Don't start editing if already editing
+            if (element.classList.contains('editing')) {
+                return;
+            }
+
+            // Prevent rapid double-clicks
+            if (element.dataset.editing === 'true') {
+                return;
+            }
+            element.dataset.editing = 'true';
+
+            const originalText = element.textContent.trim();
+            const field = element.getAttribute('data-field');
+            const id = element.getAttribute('data-id');
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.value = originalText === '-' ? '' : originalText;
+            
+            // Store original content
+            const originalHTML = element.innerHTML;
+            
+            // Replace content with input
+            element.innerHTML = '';
+            element.appendChild(input);
+            element.classList.add('editing');
+            
+            // Focus and select all text
+            input.focus();
+            input.select();
+
+            // Handle input events
+            input.addEventListener('blur', function() {
+                finishEditing(element, input.value, field, id, originalHTML);
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finishEditing(element, input.value, field, id, originalHTML);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEditing(element, originalHTML);
+                }
+            });
+        }
+
+        async function finishEditing(element, newValue, field, id, originalHTML) {
+            try {
+                // Check if element still exists and is in the DOM
+                if (!element || !element.parentNode) {
+                    showToast('Element no longer available', 'error');
+                    return;
+                }
+
+                // Show loading state
+                try {
+                    element.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+                } catch (e) {
+                    console.warn('Could not set loading state:', e);
+                }
+                
+                // Send update request
+                const response = await fetch('/TechnologyConfiguration/UpdateField', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: `id=${id}&field=${encodeURIComponent(field)}&value=${encodeURIComponent(newValue)}`
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Check if element still exists before updating
+                    if (!element || !element.parentNode) {
+                        showToast('Element no longer available', 'error');
+                        return;
+                    }
+
+                    // Update the display
+                    try {
+                        if (newValue.trim() === '') {
+                            element.innerHTML = '<span class="text-muted">-</span>';
+                        } else {
+                            element.innerHTML = newValue;
+                        }
+                        
+                        // Show success message
+                        showToast('Field updated successfully!', 'success');
+                    } catch (e) {
+                        console.warn('Could not update element display:', e);
+                        showToast('Updated but display refresh failed', 'error');
+                    }
+                } else {
+                    // Restore original content on error
+                    try {
+                        if (element && element.parentNode) {
+                            element.innerHTML = originalHTML;
+                        }
+                        showToast(result.message || 'Error updating field', 'error');
+                    } catch (e) {
+                        console.warn('Could not restore original content:', e);
+                    }
+                }
+            } catch (error) {
+                // Restore original content on error
+                try {
+                    if (element && element.parentNode) {
+                        element.innerHTML = originalHTML;
+                    }
+                    showToast('Error updating field: ' + error.message, 'error');
+                } catch (e) {
+                    console.warn('Could not restore original content:', e);
+                }
+            } finally {
+                try {
+                    if (element) {
+                        element.classList.remove('editing');
+                        element.dataset.editing = 'false';
+                    }
+                } catch (e) {
+                    console.warn('Could not remove editing class:', e);
+                }
+            }
+        }
+
+        function cancelEditing(element, originalHTML) {
+            try {
+                if (element && element.parentNode) {
+                    element.innerHTML = originalHTML;
+                }
+                if (element) {
+                    element.classList.remove('editing');
+                    element.dataset.editing = 'false';
+                }
+            } catch (e) {
+                console.warn('Could not cancel editing:', e);
+            }
+        }
+
+        function showToast(message, type) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 4px;
+                color: white;
+                font-weight: 500;
+                z-index: 9999;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            if (type === 'success') {
+                toast.style.backgroundColor = '#28a745';
+            } else {
+                toast.style.backgroundColor = '#dc3545';
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Remove toast after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+
     </script>
 }

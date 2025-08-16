@@ -38,6 +38,7 @@ namespace AssetManagement.Controllers
             return View(floorPlans);
         }
 
+        [HttpGet("Create")]
         public async Task<IActionResult> Create()
         {
             var locations = await _context.Locations
@@ -47,7 +48,7 @@ namespace AssetManagement.Controllers
             return View();
         }
 
-        [HttpPost]
+        [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("LocationId,FloorNumber,FloorName,Description")] FloorPlan floorPlan, IFormFile? imageFile)
         {
@@ -87,6 +88,7 @@ namespace AssetManagement.Controllers
             return View(floorPlan);
         }
 
+        [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -113,7 +115,7 @@ namespace AssetManagement.Controllers
             return View(floorPlan);
         }
 
-        [HttpPost]
+        [HttpPost("Edit")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,LocationId,FloorNumber,FloorName,Description,IsActive")] FloorPlan floorPlan, IFormFile? imageFile)
         {
@@ -171,6 +173,7 @@ namespace AssetManagement.Controllers
             return View(floorPlan);
         }
 
+        [HttpGet("Details/{id}")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -193,7 +196,7 @@ namespace AssetManagement.Controllers
             return View(floorPlan);
         }
 
-        [HttpPost]
+        [HttpPost("Delete/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var floorPlan = await _context.FloorPlans.FindAsync(id);
@@ -209,7 +212,7 @@ namespace AssetManagement.Controllers
             return Json(new { success = true });
         }
 
-        [HttpPost]
+        [HttpPost("AddDesk")]
         public async Task<IActionResult> AddDesk(int floorPlanId, string deskNumber, string deskName, int x, int y)
         {
             var desk = new Desk
@@ -229,7 +232,7 @@ namespace AssetManagement.Controllers
             return Json(new { success = true, deskId = desk.Id });
         }
 
-        [HttpPost]
+        [HttpPost("UpdateDesk")]
         public async Task<IActionResult> UpdateDesk(int deskId, string deskNumber, string deskName, int x, int y)
         {
             var desk = await _context.Desks.FindAsync(deskId);
@@ -249,7 +252,7 @@ namespace AssetManagement.Controllers
             return Json(new { success = true });
         }
 
-        [HttpPost]
+        [HttpPost("DeleteDesk")]
         public async Task<IActionResult> DeleteDesk(int deskId)
         {
             var desk = await _context.Desks.FindAsync(deskId);
@@ -328,5 +331,7 @@ namespace AssetManagement.Controllers
         {
             return _context.FloorPlans.Any(e => e.Id == id);
         }
+
+
     }
 }

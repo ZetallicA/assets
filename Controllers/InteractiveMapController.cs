@@ -258,5 +258,36 @@ namespace AssetManagement.Controllers
 
             return Json(equipment);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteDesk(int deskId)
+        {
+            var desk = await _context.Desks
+                .Include(d => d.Equipment)
+                .FirstOrDefaultAsync(d => d.Id == deskId);
+
+            if (desk == null)
+            {
+                return Json(new { success = false, message = "Desk not found" });
+            }
+
+            // Check if desk has equipment assigned
+            if (desk.Equipment.Any())
+            {
+                return Json(new { success = false, message = "Cannot delete desk with assigned equipment. Please unassign all equipment first." });
+            }
+
+            // Soft delete the desk
+            desk.IsActive = false;
+            desk.UpdatedAt = DateTime.UtcNow;
+
+            // Note: We're not logging desk deletions to AssetAuditLog since it requires EquipmentId
+            // In a production system, you might want to create a separate DeskAuditLog table
+            // or modify AssetAuditLog to allow null EquipmentId for system-level actions
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
     }
 }

@@ -51,6 +51,7 @@ namespace AssetManagement.Controllers
                            .Include(e => e.CurrentDesk)
                            .Include(e => e.AssignedPerson)
                            .Include(e => e.AssignedEntraUser)
+                           .Include(e => e.TechnologyConfiguration)
                            select e;
 
             // Apply search filter
@@ -64,7 +65,8 @@ namespace AssetManagement.Controllers
                                                 e.Model.Contains(searchString) ||
                                                 e.Manufacturer.Contains(searchString) ||
                                                 e.Department.Contains(searchString) ||
-                                                e.Facility.Contains(searchString));
+                                                e.Facility.Contains(searchString) ||
+                                                (e.TechnologyConfiguration != null && e.TechnologyConfiguration.NetName.Contains(searchString)));
             }
 
             // Apply category filter
@@ -106,7 +108,9 @@ namespace AssetManagement.Controllers
             // Apply Net Name filter
             if (!String.IsNullOrEmpty(netNameFilter))
             {
-                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Computer_Name) && e.Computer_Name == netNameFilter);
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.NetName) && 
+                                                e.TechnologyConfiguration.NetName == netNameFilter);
             }
 
             // Apply Model filter
@@ -120,8 +124,8 @@ namespace AssetManagement.Controllers
             equipment = sortOrder switch
             {
                 "oath_tag_desc" => equipment.OrderByDescending(e => e.OATH_Tag),
-                "netname" => equipment.OrderBy(e => e.Computer_Name),
-                "netname_desc" => equipment.OrderByDescending(e => e.Computer_Name),
+                "netname" => equipment.OrderBy(e => e.TechnologyConfiguration != null ? e.TechnologyConfiguration.NetName : ""),
+                "netname_desc" => equipment.OrderByDescending(e => e.TechnologyConfiguration != null ? e.TechnologyConfiguration.NetName : ""),
                 "model" => equipment.OrderBy(e => e.Model),
                 "model_desc" => equipment.OrderByDescending(e => e.Model),
                 "status" => equipment.OrderBy(e => e.CurrentStatus.Name),
@@ -182,9 +186,9 @@ namespace AssetManagement.Controllers
                 .ToListAsync();
 
             // Get Net Name options
-            ViewData["NetNameOptions"] = await _context.Equipment
-                .Where(e => !String.IsNullOrEmpty(e.Computer_Name))
-                .Select(e => e.Computer_Name)
+            ViewData["NetNameOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.NetName))
+                .Select(tc => tc.NetName)
                 .Distinct()
                 .OrderBy(n => n)
                 .ToListAsync();

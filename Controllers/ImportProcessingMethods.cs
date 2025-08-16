@@ -608,11 +608,44 @@ namespace AssetManagement.Controllers
 
         private Task HandleTechnologyConfiguration(Equipment equipment, ExcelWorksheet worksheet, int row)
         {
-            var netName = worksheet.Cells[row, 16].Value?.ToString()?.Trim();
-            var ipv4 = worksheet.Cells[row, 17].Value?.ToString()?.Trim();
-            var mac = worksheet.Cells[row, 18].Value?.ToString()?.Trim();
+            var headerMapping = CreateHeaderMapping(worksheet);
+            
+            // Debug: Log what headers we found
+            if (row == 2) // Only log for first data row to avoid spam
+            {
+                System.Diagnostics.Debug.WriteLine("=== HEADER MAPPING DEBUG ===");
+                foreach (var kvp in headerMapping)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Header: '{kvp.Key}' -> Column {kvp.Value}");
+                }
+            }
+            
+            var netName = GetCellValue(worksheet, row, headerMapping, "Net Name (Hostname)");
+            var ipv4 = GetCellValue(worksheet, row, headerMapping, "IP Address");
+            var mac = GetCellValue(worksheet, row, headerMapping, "MAC Address");
+            var wallPort = GetCellValue(worksheet, row, headerMapping, "Wall Port");
+            var switchName = GetCellValue(worksheet, row, headerMapping, "Switch Name");
+            var switchPort = GetCellValue(worksheet, row, headerMapping, "Switch Port");
+            var phoneNumber = GetCellValue(worksheet, row, headerMapping, "Phone Number");
+            var extension = GetCellValue(worksheet, row, headerMapping, "Extension");
+            var imei = GetCellValue(worksheet, row, headerMapping, "IMEI");
+            var simCard = GetCellValue(worksheet, row, headerMapping, "SIM Card Number");
+            var vendor = GetCellValue(worksheet, row, headerMapping, "Vendor");
+            var configNotes = GetCellValue(worksheet, row, headerMapping, "Configuration Notes");
 
-            if (!string.IsNullOrEmpty(netName) || !string.IsNullOrEmpty(ipv4) || !string.IsNullOrEmpty(mac))
+            // Debug: Log what values we got
+            if (row == 2) // Only log for first data row
+            {
+                System.Diagnostics.Debug.WriteLine($"=== VALUES FOR ROW {row} ===");
+                System.Diagnostics.Debug.WriteLine($"NetName: '{netName}'");
+                System.Diagnostics.Debug.WriteLine($"IPv4: '{ipv4}'");
+                System.Diagnostics.Debug.WriteLine($"MAC: '{mac}'");
+                System.Diagnostics.Debug.WriteLine($"WallPort: '{wallPort}'");
+            }
+
+            // Create technology configuration if any tech data exists
+            if (!string.IsNullOrEmpty(netName) || !string.IsNullOrEmpty(ipv4) || !string.IsNullOrEmpty(mac) || 
+                !string.IsNullOrEmpty(phoneNumber) || !string.IsNullOrEmpty(switchName) || !string.IsNullOrEmpty(wallPort))
             {
                 if (equipment.TechnologyConfiguration == null)
                 {
@@ -624,15 +657,22 @@ namespace AssetManagement.Controllers
                 }
 
                 var config = equipment.TechnologyConfiguration;
-                equipment.Computer_Name = netName;  // Computer_Name maps to what was "Net Name"
-                equipment.IP_Address = ipv4;       // IP_Address maps to IPv4
+                
+                // Store data in TechnologyConfiguration model (not Equipment model)
+                config.NetName = netName;
+                config.IPv4Address = ipv4;
                 config.MACAddress = mac;
-                config.WallPort = worksheet.Cells[row, 19].Value?.ToString()?.Trim();
-                config.SwitchName = worksheet.Cells[row, 20].Value?.ToString()?.Trim();
-                config.SwitchPort = worksheet.Cells[row, 21].Value?.ToString()?.Trim();
-                equipment.Phone_Number = worksheet.Cells[row, 22].Value?.ToString()?.Trim();
-                config.ConfigurationNotes = worksheet.Cells[row, 23].Value?.ToString()?.Trim();
+                config.WallPort = wallPort;
+                config.SwitchName = switchName;
+                config.SwitchPort = switchPort;
+                config.PhoneNumber = phoneNumber;
+                config.Extension = extension;
+                config.IMEI = imei;
+                config.SIMCardNumber = simCard;
+                config.Vendor = vendor;
+                config.ConfigurationNotes = configNotes;
                 config.LastUpdated = DateTime.UtcNow;
+                config.UpdatedBy = "System";
             }
             
             return Task.CompletedTask;
@@ -652,12 +692,17 @@ namespace AssetManagement.Controllers
                     var normalizedHeader = header.Replace("*", "").Replace("(", "").Replace(")", "").Trim();
                     mapping[normalizedHeader] = col;
                     
+                    // Also store the original header for exact matching
+                    mapping[header] = col;
+                    
                     // Add specific mappings for common variations
                     if (normalizedHeader.Equals("OATH Tag", StringComparison.OrdinalIgnoreCase))
                         mapping["OATHTag"] = col;
                     if (normalizedHeader.Equals("Serial Number", StringComparison.OrdinalIgnoreCase))
                         mapping["SerialNumber"] = col;
                     if (normalizedHeader.Equals("Net Name Hostname", StringComparison.OrdinalIgnoreCase))
+                        mapping["NetName"] = col;
+                    if (normalizedHeader.Equals("Net Name (Hostname)", StringComparison.OrdinalIgnoreCase))
                         mapping["NetName"] = col;
                     if (normalizedHeader.Equals("IP Address", StringComparison.OrdinalIgnoreCase))
                         mapping["IPAddress"] = col;
@@ -679,6 +724,24 @@ namespace AssetManagement.Controllers
                         mapping["SIMCardNumber"] = col;
                     if (normalizedHeader.Equals("Unit", StringComparison.OrdinalIgnoreCase))
                         mapping["Unit"] = col;
+                    if (normalizedHeader.Equals("Net Name", StringComparison.OrdinalIgnoreCase))
+                        mapping["NetName"] = col;
+                    if (normalizedHeader.Equals("IP Address", StringComparison.OrdinalIgnoreCase))
+                        mapping["IPAddress"] = col;
+                    if (normalizedHeader.Equals("MAC Address", StringComparison.OrdinalIgnoreCase))
+                        mapping["MACAddress"] = col;
+                    if (normalizedHeader.Equals("Wall Port", StringComparison.OrdinalIgnoreCase))
+                        mapping["WallPort"] = col;
+                    if (normalizedHeader.Equals("Switch Name", StringComparison.OrdinalIgnoreCase))
+                        mapping["SwitchName"] = col;
+                    if (normalizedHeader.Equals("Switch Port", StringComparison.OrdinalIgnoreCase))
+                        mapping["SwitchPort"] = col;
+                    if (normalizedHeader.Equals("Extension", StringComparison.OrdinalIgnoreCase))
+                        mapping["Extension"] = col;
+                    if (normalizedHeader.Equals("Vendor", StringComparison.OrdinalIgnoreCase))
+                        mapping["Vendor"] = col;
+                    if (normalizedHeader.Equals("Configuration Notes", StringComparison.OrdinalIgnoreCase))
+                        mapping["ConfigurationNotes"] = col;
                 }
             }
             
@@ -691,6 +754,14 @@ namespace AssetManagement.Controllers
             {
                 return worksheet.Cells[row, col].Value?.ToString()?.Trim() ?? "";
             }
+            
+            // Fallback: try normalized version (without parentheses)
+            var normalizedFieldName = fieldName.Replace("(", "").Replace(")", "").Trim();
+            if (headerMapping.TryGetValue(normalizedFieldName, out int normalizedCol))
+            {
+                return worksheet.Cells[row, normalizedCol].Value?.ToString()?.Trim() ?? "";
+            }
+            
             return "";
         }
 

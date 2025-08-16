@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Debug Headers";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="bi bi-bug"></i> Debug Header Mapping</h2>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form asp-action="DebugHeaders" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Select Excel File</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Analyze Headers
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            @if (TempData["DebugInfo"] != null)
+            {
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Debug Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; white-space: pre-wrap;">@TempData["DebugInfo"]</pre>
+                    </div>
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger mt-4">
+                    @TempData["Error"]
+                </div>
+            }
+        </div>
+    </div>
+</div>

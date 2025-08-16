@@ -801,9 +801,9 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (!string.IsNullOrEmpty(item.Computer_Name))
+                                        @if (item.TechnologyConfiguration != null && !string.IsNullOrEmpty(item.TechnologyConfiguration.NetName))
                                         {
-                                            <span class="badge bg-secondary">@item.Computer_Name</span>
+                                            <span class="badge bg-secondary">@item.TechnologyConfiguration.NetName</span>
                                         }
                                         else
                                         {

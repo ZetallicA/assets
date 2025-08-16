@@ -3,6 +3,71 @@
     ViewData["Title"] = "Floor Plans";
 }
 
+<style>
+    .action-buttons .btn {
+        transition: all 0.2s ease-in-out;
+        border-radius: 6px;
+        font-weight: 500;
+        min-width: 60px;
+    }
+    
+    .action-buttons .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .action-buttons .btn:active {
+        transform: translateY(0);
+    }
+    
+    .action-buttons .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+    }
+    
+    .action-buttons .btn-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        border: none;
+    }
+    
+    .action-buttons .btn-warning {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        border: none;
+    }
+    
+    .action-buttons .btn-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border: none;
+    }
+    
+    .action-buttons .btn:hover {
+        filter: brightness(1.1);
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .table th {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.75em;
+    }
+</style>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -106,22 +171,39 @@
                                                 </small>
                                             </td>
                                             <td>
-                                                <div class="btn-group" role="group">
+                                                <div class="d-flex gap-1 action-buttons">
                                                     <a href="@Url.Action("FloorPlan", "InteractiveMap", new { id = floorPlan.Id })" 
-                                                       class="btn btn-sm btn-outline-primary" title="Interactive Map">
-                                                        <i class="fas fa-map"></i>
+                                                       class="btn btn-sm btn-primary" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="Interactive Floor Plan">
+                                                        <i class="fas fa-map-marked-alt me-1"></i>
+                                                        <span class="d-none d-sm-inline">Map</span>
                                                     </a>
                                                     <a asp-action="Details" asp-route-id="@floorPlan.Id" 
-                                                       class="btn btn-sm btn-outline-info" title="View Details">
-                                                        <i class="fas fa-eye"></i>
+                                                       class="btn btn-sm btn-info text-white" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="View Details">
+                                                        <i class="fas fa-eye me-1"></i>
+                                                        <span class="d-none d-sm-inline">View</span>
                                                     </a>
                                                     <a asp-action="Edit" asp-route-id="@floorPlan.Id" 
-                                                       class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                        <i class="fas fa-edit"></i>
+                                                       class="btn btn-sm btn-warning text-white" 
+                                                       data-bs-toggle="tooltip" 
+                                                       data-bs-placement="top" 
+                                                       title="Edit Floor Plan">
+                                                        <i class="fas fa-edit me-1"></i>
+                                                        <span class="d-none d-sm-inline">Edit</span>
                                                     </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                            onclick="deleteFloorPlan(@floorPlan.Id, '@floorPlan.Location?.Name - @floorPlan.FloorNumber')" title="Delete">
-                                                        <i class="fas fa-trash"></i>
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-danger" 
+                                                            onclick="deleteFloorPlan(@floorPlan.Id, '@floorPlan.Location?.Name - @floorPlan.FloorNumber')" 
+                                                            data-bs-toggle="tooltip" 
+                                                            data-bs-placement="top" 
+                                                            title="Delete Floor Plan">
+                                                        <i class="fas fa-trash-alt me-1"></i>
+                                                        <span class="d-none d-sm-inline">Delete</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -139,13 +221,52 @@
 
 @section Scripts {
     <script>
+        $(document).ready(function() {
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Add loading state to buttons
+            $('.action-buttons .btn').on('click', function() {
+                var $btn = $(this);
+                var originalContent = $btn.html();
+                
+                // Add loading spinner
+                $btn.html('<i class="fas fa-spinner fa-spin me-1"></i>Loading...');
+                $btn.prop('disabled', true);
+                
+                // Reset after a delay (for non-AJAX actions)
+                setTimeout(function() {
+                    $btn.html(originalContent);
+                    $btn.prop('disabled', false);
+                }, 2000);
+            });
+        });
+
         function deleteFloorPlan(id, name) {
             if (confirm(`Are you sure you want to delete the floor plan "${name}"? This will also deactivate all associated desks.`)) {
+                // Show loading state
+                var $deleteBtn = $(`button[onclick*="${id}"]`);
+                var originalContent = $deleteBtn.html();
+                $deleteBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Deleting...');
+                $deleteBtn.prop('disabled', true);
+                
                 $.post('@Url.Action("Delete")', { id: id })
                     .done(function() {
-                        location.reload();
+                        // Show success message before reload
+                        $deleteBtn.html('<i class="fas fa-check me-1"></i>Deleted!');
+                        $deleteBtn.removeClass('btn-danger').addClass('btn-success');
+                        
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
                     })
                     .fail(function() {
+                        // Reset button on error
+                        $deleteBtn.html(originalContent);
+                        $deleteBtn.prop('disabled', false);
                         alert('Failed to delete floor plan');
                     });
             }
