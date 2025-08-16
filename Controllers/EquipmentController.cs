@@ -81,22 +81,25 @@ namespace AssetManagement.Controllers
                                                 (e.TechnologyConfiguration != null && e.TechnologyConfiguration.NetName.Contains(searchString)));
             }
 
-            // Apply category filter
+            // Apply category filter (support multiple values)
             if (!String.IsNullOrEmpty(categoryFilter))
             {
-                equipment = equipment.Where(e => e.AssetCategory != null && e.AssetCategory.Name == categoryFilter);
+                var categories = categoryFilter.Split(',').Select(c => c.Trim()).ToList();
+                equipment = equipment.Where(e => e.AssetCategory != null && categories.Contains(e.AssetCategory.Name));
             }
 
-            // Apply status filter
+            // Apply status filter (support multiple values)
             if (!String.IsNullOrEmpty(statusFilter))
             {
-                equipment = equipment.Where(e => e.CurrentStatus != null && e.CurrentStatus.Name == statusFilter);
+                var statuses = statusFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentStatus != null && statuses.Contains(e.CurrentStatus.Name));
             }
 
-            // Apply department filter
+            // Apply department filter (support multiple values)
             if (!String.IsNullOrEmpty(departmentFilter))
             {
-                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Department) && e.Department == departmentFilter);
+                var departments = departmentFilter.Split(',').Select(d => d.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Department) && departments.Contains(e.Department));
             }
 
             // Apply OATH Tag filter
@@ -111,16 +114,18 @@ namespace AssetManagement.Controllers
                 equipment = equipment.Where(e => e.Assigned_User_Name == assignedToFilter);
             }
 
-            // Apply Location filter (Building only)
+            // Apply Location filter (Building only) - support multiple values
             if (!String.IsNullOrEmpty(locationFilter))
             {
-                equipment = equipment.Where(e => e.CurrentLocation != null && e.CurrentLocation.Name.StartsWith(locationFilter));
+                var locations = locationFilter.Split(',').Select(l => l.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentLocation != null && locations.Any(loc => e.CurrentLocation.Name.StartsWith(loc)));
             }
 
-            // Apply Floor filter
+            // Apply Floor filter - support multiple values
             if (!String.IsNullOrEmpty(floorFilter))
             {
-                equipment = equipment.Where(e => e.CurrentFloorPlan != null && e.CurrentFloorPlan.FloorName == floorFilter);
+                var floors = floorFilter.Split(',').Select(f => f.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentFloorPlan != null && floors.Contains(e.CurrentFloorPlan.FloorName));
             }
 
             // Apply Net Name filter
@@ -1077,15 +1082,33 @@ namespace AssetManagement.Controllers
                             return Json(new InlineEditResponse { Success = false, Message = "Floor cannot be empty" });
                         }
                         
+                        // Try exact match first, then partial match
                         var floorPlan = await _context.FloorPlans
                             .FirstOrDefaultAsync(f => f.FloorName == floorName && f.IsActive);
+                        
                         if (floorPlan == null)
                         {
-                            return Json(new InlineEditResponse { Success = false, Message = $"Floor '{floorName}' not found" });
+                            // Try partial match for cases like "3" matching "3rd Floor"
+                            floorPlan = await _context.FloorPlans
+                                .FirstOrDefaultAsync(f => f.FloorName.Contains(floorName) && f.IsActive);
+                        }
+                        
+                        if (floorPlan == null)
+                        {
+                            // Get available floors for debugging
+                            var availableFloors = await _context.FloorPlans
+                                .Where(f => f.IsActive)
+                                .Select(f => f.FloorName)
+                                .ToListAsync();
+                            
+                            return Json(new InlineEditResponse { 
+                                Success = false, 
+                                Message = $"Floor '{floorName}' not found. Available floors: {string.Join(", ", availableFloors)}" 
+                            });
                         }
                         
                         equipment.CurrentFloorPlanId = floorPlan.Id;
-                        await LogEquipmentAction(equipment.Id, "Floor Updated", $"Floor set to {floorName}");
+                        await LogEquipmentAction(equipment.Id, "Floor Updated", $"Floor set to {floorPlan.FloorName}");
                         break;
 
                     case "currentdeskid":
@@ -1135,23 +1158,31 @@ namespace AssetManagement.Controllers
                         break;
 
                     case "currentstatusid":
-                        if (int.TryParse(request.Value?.ToString(), out int statusId))
+                        // Find the status by name
+                        var statusName = request.Value?.ToString();
+                        if (string.IsNullOrWhiteSpace(statusName))
                         {
-                            var status = await _context.AssetStatuses.FindAsync(statusId);
-                            if (status != null)
-                            {
-                                equipment.CurrentStatusId = statusId;
-                                await LogEquipmentAction(equipment.Id, "Status Changed", $"Status set to {status.Name}");
-                            }
-                            else
-                            {
-                                return Json(new InlineEditResponse { Success = false, Message = "Invalid status" });
-                            }
+                            return Json(new InlineEditResponse { Success = false, Message = "Status cannot be empty" });
                         }
-                        else
+                        
+                        var status = await _context.AssetStatuses
+                            .FirstOrDefaultAsync(s => s.Name == statusName && s.IsActive);
+                        if (status == null)
                         {
-                            return Json(new InlineEditResponse { Success = false, Message = "Invalid status value" });
+                            // Get available statuses for debugging
+                            var availableStatuses = await _context.AssetStatuses
+                                .Where(s => s.IsActive)
+                                .Select(s => s.Name)
+                                .ToListAsync();
+                            
+                            return Json(new InlineEditResponse { 
+                                Success = false, 
+                                Message = $"Status '{statusName}' not found. Available statuses: {string.Join(", ", availableStatuses)}" 
+                            });
                         }
+                        
+                        equipment.CurrentStatusId = status.Id;
+                        await LogEquipmentAction(equipment.Id, "Status Changed", $"Status set to {status.Name}");
                         break;
 
                     case "netname":
@@ -1169,6 +1200,60 @@ namespace AssetManagement.Controllers
                         equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
                         equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
                         await LogEquipmentAction(equipment.Id, "Net Name Updated", $"Net name set to {request.Value}");
+                        break;
+
+                    case "phone_number":
+                        equipment.Phone_Number = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Phone Number Updated", $"Phone number set to {request.Value}");
+                        break;
+
+                    case "asset_tag":
+                        equipment.Asset_Tag = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Asset Tag Updated", $"Asset tag set to {request.Value}");
+                        break;
+
+                    case "service_tag":
+                        equipment.Service_Tag = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Service Tag Updated", $"Service tag set to {request.Value}");
+                        break;
+
+                    case "ip_address":
+                        equipment.IP_Address = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "IP Address Updated", $"IP address set to {request.Value}");
+                        break;
+
+                    case "os_version":
+                        equipment.OS_Version = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "OS Version Updated", $"OS version set to {request.Value}");
+                        break;
+
+                    case "purchaseprice":
+                        if (decimal.TryParse(request.Value?.ToString().Replace("$", "").Replace(",", ""), out decimal purchasePrice))
+                        {
+                            equipment.PurchasePrice = purchasePrice;
+                            await LogEquipmentAction(equipment.Id, "Purchase Price Updated", $"Purchase price set to {purchasePrice:C}");
+                        }
+                        else
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Invalid price format. Please enter a valid number." });
+                        }
+                        break;
+
+                    case "warrantyenddate":
+                        if (DateTime.TryParse(request.Value?.ToString(), out DateTime warrantyEndDate))
+                        {
+                            equipment.WarrantyEndDate = warrantyEndDate;
+                            await LogEquipmentAction(equipment.Id, "Warranty End Date Updated", $"Warranty end date set to {warrantyEndDate:MM/dd/yyyy}");
+                        }
+                        else
+                        {
+                            return Json(new InlineEditResponse { Success = false, Message = "Invalid date format. Please use MM/dd/yyyy" });
+                        }
+                        break;
+
+                    case "notes":
+                        equipment.Notes = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Notes Updated", $"Notes updated");
                         break;
 
                     default:

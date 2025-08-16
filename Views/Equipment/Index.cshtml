@@ -100,6 +100,36 @@
         background-color: #e9ecef;
     }
     
+    .filter-count {
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 0.7rem;
+        margin-left: 4px;
+        display: none;
+    }
+    
+    .filter-count.show {
+        display: inline-block;
+    }
+    
+    .multi-filter-checkbox {
+        margin-right: 8px;
+    }
+    
+    .form-check-label {
+        cursor: pointer;
+        width: 100%;
+        padding: 4px 0;
+    }
+    
+    .form-check-label:hover {
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    }
+    
     .filter-button.active:hover {
         background-color: #0056b3;
     }
@@ -418,8 +448,9 @@
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["CategoryFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                 <i class="bi bi-funnel"></i>
+                                                <span class="filter-count" id="category-filter-count"></span>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 400px; overflow-y: auto; min-width: 280px;">
                                                 <li><h6 class="dropdown-header">Filter by Category</h6></li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
@@ -431,21 +462,32 @@
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <div class="px-3 py-2" id="category-filter-items">
+                                                        @{
+                                                            var selectedCategories = ViewData["CategoryFilter"]?.ToString()?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>();
+                                                        }
                                                         @foreach (var category in ViewData["CategoryOptions"] as List<string> ?? new List<string>())
                                                         {
                                                             <div class="filter-item">
-                                                                <a class="dropdown-item @(category == ViewData["CategoryFilter"]?.ToString() ? "active" : "")" 
-                                                                   href="@Url.Action("Index", new { 
-                                                                       sortOrder = ViewData["CurrentSort"], 
-                                                                       currentFilter = ViewData["CurrentFilter"], 
-                                                                       categoryFilter = category, 
-                                                                       statusFilter = ViewData["StatusFilter"], 
-                                                                       departmentFilter = ViewData["DepartmentFilter"] 
-                                                                   })">
-                                                                    @category
-                                                                </a>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input multi-filter-checkbox" type="checkbox" 
+                                                                           id="category-@category.Replace(" ", "-")" 
+                                                                           value="@category" 
+                                                                           data-filter-type="category"
+                                                                           @(selectedCategories.Contains(category) ? "checked" : "")>
+                                                                    <label class="form-check-label" for="category-@category.Replace(" ", "-")">
+                                                                        @category
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         }
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2 d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="applyMultiFilter('category')">Apply</button>
+                                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearMultiFilter('category')">Clear</button>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="selectAllMultiFilter('category')">Select All</button>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -472,8 +514,9 @@
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["DepartmentFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                 <i class="bi bi-funnel"></i>
+                                                <span class="filter-count" id="department-filter-count"></span>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 400px; overflow-y: auto; min-width: 280px;">
                                                 <li><h6 class="dropdown-header">Filter by Unit</h6></li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
@@ -485,21 +528,32 @@
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <div class="px-3 py-2" id="unit-filter-items">
+                                                        @{
+                                                            var selectedDepartments = ViewData["DepartmentFilter"]?.ToString()?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>();
+                                                        }
                                                         @foreach (var dept in ViewData["DepartmentOptions"] as List<string> ?? new List<string>())
                                                         {
                                                             <div class="filter-item">
-                                                                <a class="dropdown-item @(dept == ViewData["DepartmentFilter"]?.ToString() ? "active" : "")" 
-                                                                   href="@Url.Action("Index", new { 
-                                                                       sortOrder = ViewData["CurrentSort"], 
-                                                                       currentFilter = ViewData["CurrentFilter"], 
-                                                                       categoryFilter = ViewData["CategoryFilter"], 
-                                                                       statusFilter = ViewData["StatusFilter"], 
-                                                                       departmentFilter = dept 
-                                                                   })">
-                                                                    @dept
-                                                                </a>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input multi-filter-checkbox" type="checkbox" 
+                                                                           id="department-@dept.Replace(" ", "-")" 
+                                                                           value="@dept" 
+                                                                           data-filter-type="department"
+                                                                           @(selectedDepartments.Contains(dept) ? "checked" : "")>
+                                                                    <label class="form-check-label" for="department-@dept.Replace(" ", "-")">
+                                                                        @dept
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         }
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2 d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="applyMultiFilter('department')">Apply</button>
+                                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearMultiFilter('department')">Clear</button>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="selectAllMultiFilter('department')">Select All</button>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -638,8 +692,9 @@
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle filter-button @(!string.IsNullOrEmpty(ViewData["StatusFilter"]?.ToString()) ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                 <i class="bi bi-funnel"></i>
+                                                <span class="filter-count" id="status-filter-count"></span>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto; min-width: 250px;">
+                                            <ul class="dropdown-menu dropdown-menu-end" style="max-height: 400px; overflow-y: auto; min-width: 280px;">
                                                 <li><h6 class="dropdown-header">Filter by Status</h6></li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
@@ -651,21 +706,32 @@
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <div class="px-3 py-2" id="status-filter-items">
+                                                        @{
+                                                            var selectedStatuses = ViewData["StatusFilter"]?.ToString()?.Split(',').Select(s => s.Trim()).ToList() ?? new List<string>();
+                                                        }
                                                         @foreach (var status in ViewData["StatusOptions"] as List<string> ?? new List<string>())
                                                         {
                                                             <div class="filter-item">
-                                                                <a class="dropdown-item @(status == ViewData["StatusFilter"]?.ToString() ? "active" : "")" 
-                                                                   href="@Url.Action("Index", new { 
-                                                                       sortOrder = ViewData["CurrentSort"], 
-                                                                       currentFilter = ViewData["CurrentFilter"], 
-                                                                       categoryFilter = ViewData["CategoryFilter"], 
-                                                                       statusFilter = status, 
-                                                                       departmentFilter = ViewData["DepartmentFilter"] 
-                                                                   })">
-                                                                    @status
-                                                                </a>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input multi-filter-checkbox" type="checkbox" 
+                                                                           id="status-@status.Replace(" ", "-")" 
+                                                                           value="@status" 
+                                                                           data-filter-type="status"
+                                                                           @(selectedStatuses.Contains(status) ? "checked" : "")>
+                                                                    <label class="form-check-label" for="status-@status.Replace(" ", "-")">
+                                                                        @status
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         }
+                                                    </div>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <div class="px-3 py-2 d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="applyMultiFilter('status')">Apply</button>
+                                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearMultiFilter('status')">Clear</button>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="selectAllMultiFilter('status')">Select All</button>
                                                     </div>
                                                 </li>
                                             </ul>
@@ -1234,9 +1300,20 @@
                                     <td class="column-phone-number editable-cell" data-field="Phone_Number" data-value="@(item.Phone_Number ?? "")" style="cursor: pointer;" title="@(item.Phone_Number ?? "N/A")">@(string.IsNullOrEmpty(item.Phone_Number) ? "N/A" : (item.Phone_Number.Length > 15 ? item.Phone_Number.Substring(0, 15) + "..." : item.Phone_Number))</td>
                                     <td class="column-purchase-price editable-cell" data-field="PurchasePrice" data-value="@(item.PurchasePrice?.ToString() ?? "")" style="cursor: pointer;" title="@(item.PurchasePrice?.ToString("C") ?? "N/A")">@(item.PurchasePrice?.ToString("C") ?? "N/A")</td>
                                     <td class="column-warranty-end editable-cell" data-field="WarrantyEndDate" data-value="@(item.WarrantyEndDate?.ToString("MM/dd/yyyy") ?? "")" style="cursor: pointer;" title="@(item.WarrantyEndDate?.ToString("MM/dd/yyyy") ?? "N/A")">@(item.WarrantyEndDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
-                                    <td class="column-notes editable-cell" data-field="Notes" data-value="@(item.Notes ?? "")" style="cursor: pointer;" title="@(item.Notes ?? "N/A")">@(string.IsNullOrEmpty(item.Notes) ? "N/A" : (item.Notes.Length > 20 ? item.Notes.Substring(0, 20) + "..." : item.Notes))</td>
-                                    <td class="column-created-at" title="@(item.CreatedAt.ToString("MM/dd/yyyy HH:mm"))">@(item.CreatedAt.ToString("MM/dd/yyyy"))</td>
-                                    <td class="column-updated-at" title="@(item.UpdatedAt?.ToString("MM/dd/yyyy HH:mm") ?? "N/A")">@(item.UpdatedAt?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                                                    <td class="column-notes editable-cell" data-field="Notes" data-value="@(item.Notes ?? "")" style="cursor: pointer;" title="@(item.Notes ?? "N/A")">@(string.IsNullOrEmpty(item.Notes) ? "N/A" : (item.Notes.Length > 20 ? item.Notes.Substring(0, 20) + "..." : item.Notes))</td>
+                                
+                                <!-- Technology Configuration Columns -->
+                                <td class="column-mac-address editable-cell" data-field="MACAddress" data-value="@(item.TechnologyConfiguration?.MACAddress ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.MACAddress ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.MACAddress) ? "N/A" : (item.TechnologyConfiguration.MACAddress.Length > 15 ? item.TechnologyConfiguration.MACAddress.Substring(0, 15) + "..." : item.TechnologyConfiguration.MACAddress))</td>
+                                <td class="column-wall-port editable-cell" data-field="WallPort" data-value="@(item.TechnologyConfiguration?.WallPort ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.WallPort ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.WallPort) ? "N/A" : (item.TechnologyConfiguration.WallPort.Length > 15 ? item.TechnologyConfiguration.WallPort.Substring(0, 15) + "..." : item.TechnologyConfiguration.WallPort))</td>
+                                <td class="column-switch-name editable-cell" data-field="SwitchName" data-value="@(item.TechnologyConfiguration?.SwitchName ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.SwitchName ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.SwitchName) ? "N/A" : (item.TechnologyConfiguration.SwitchName.Length > 15 ? item.TechnologyConfiguration.SwitchName.Substring(0, 15) + "..." : item.TechnologyConfiguration.SwitchName))</td>
+                                <td class="column-switch-port editable-cell" data-field="SwitchPort" data-value="@(item.TechnologyConfiguration?.SwitchPort ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.SwitchPort ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.SwitchPort) ? "N/A" : (item.TechnologyConfiguration.SwitchPort.Length > 15 ? item.TechnologyConfiguration.SwitchPort.Substring(0, 15) + "..." : item.TechnologyConfiguration.SwitchPort))</td>
+                                <td class="column-extension editable-cell" data-field="Extension" data-value="@(item.TechnologyConfiguration?.Extension ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.Extension ?? "N/A")">@(item.TechnologyConfiguration?.Extension ?? "N/A")</td>
+                                <td class="column-imei editable-cell" data-field="IMEI" data-value="@(item.TechnologyConfiguration?.IMEI ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.IMEI ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.IMEI) ? "N/A" : (item.TechnologyConfiguration.IMEI.Length > 15 ? item.TechnologyConfiguration.IMEI.Substring(0, 15) + "..." : item.TechnologyConfiguration.IMEI))</td>
+                                <td class="column-sim-card editable-cell" data-field="SIMCardNumber" data-value="@(item.TechnologyConfiguration?.SIMCardNumber ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.SIMCardNumber ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.SIMCardNumber) ? "N/A" : (item.TechnologyConfiguration.SIMCardNumber.Length > 15 ? item.TechnologyConfiguration.SIMCardNumber.Substring(0, 15) + "..." : item.TechnologyConfiguration.SIMCardNumber))</td>
+                                <td class="column-config-notes editable-cell" data-field="ConfigurationNotes" data-value="@(item.TechnologyConfiguration?.ConfigurationNotes ?? "")" style="cursor: pointer;" title="@(item.TechnologyConfiguration?.ConfigurationNotes ?? "N/A")">@(string.IsNullOrEmpty(item.TechnologyConfiguration?.ConfigurationNotes) ? "N/A" : (item.TechnologyConfiguration.ConfigurationNotes.Length > 20 ? item.TechnologyConfiguration.ConfigurationNotes.Substring(0, 20) + "..." : item.TechnologyConfiguration.ConfigurationNotes))</td>
+                                
+                                <td class="column-created-at" title="@(item.CreatedAt.ToString("MM/dd/yyyy HH:mm"))">@(item.CreatedAt.ToString("MM/dd/yyyy"))</td>
+                                <td class="column-updated-at" title="@(item.UpdatedAt?.ToString("MM/dd/yyyy HH:mm") ?? "N/A")">@(item.UpdatedAt?.ToString("MM/dd/yyyy") ?? "N/A")</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="View Details">
@@ -1510,6 +1587,9 @@
         
         // Initialize column management
         initializeColumnManagement();
+        
+        // Initialize filter counts
+        initializeFilterCounts();
         
         // Debug: Show equipment IDs on current page
         const equipmentRows = Array.from(document.querySelectorAll('tr[data-equipment-id]'));
@@ -1916,6 +1996,67 @@
                 placement: 'top',
                 trigger: 'hover'
             });
+        });
+    }
+
+    // Multi-filter functions
+    function applyMultiFilter(filterType) {
+        const checkboxes = document.querySelectorAll(`[data-filter-type="${filterType}"]:checked`);
+        const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+        
+        // Update filter count
+        updateFilterCount(filterType, selectedValues.length);
+        
+        // Build URL with current parameters
+        const url = new URL(window.location);
+        if (selectedValues.length > 0) {
+            url.searchParams.set(`${filterType}Filter`, selectedValues.join(','));
+        } else {
+            url.searchParams.delete(`${filterType}Filter`);
+        }
+        
+        // Navigate to new URL
+        window.location.href = url.toString();
+    }
+
+    function clearMultiFilter(filterType) {
+        const checkboxes = document.querySelectorAll(`[data-filter-type="${filterType}"]`);
+        checkboxes.forEach(cb => cb.checked = false);
+        
+        // Update filter count
+        updateFilterCount(filterType, 0);
+        
+        // Build URL without this filter
+        const url = new URL(window.location);
+        url.searchParams.delete(`${filterType}Filter`);
+        
+        // Navigate to new URL
+        window.location.href = url.toString();
+    }
+
+    function selectAllMultiFilter(filterType) {
+        const checkboxes = document.querySelectorAll(`[data-filter-type="${filterType}"]`);
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+
+    function updateFilterCount(filterType, count) {
+        const countElement = document.getElementById(`${filterType}-filter-count`);
+        if (countElement) {
+            if (count > 0) {
+                countElement.textContent = count;
+                countElement.classList.add('show');
+            } else {
+                countElement.classList.remove('show');
+            }
+        }
+    }
+
+    // Initialize filter counts on page load
+    function initializeFilterCounts() {
+        const filterTypes = ['category', 'status', 'department', 'location', 'floor'];
+        filterTypes.forEach(filterType => {
+            const checkboxes = document.querySelectorAll(`[data-filter-type="${filterType}"]:checked`);
+            updateFilterCount(filterType, checkboxes.length);
         });
     }
 
