@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using AssetManagement.Data;
 using AssetManagement.Models;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
 
 namespace AssetManagement.Controllers
 {
@@ -18,7 +22,8 @@ namespace AssetManagement.Controllers
         public async Task<IActionResult> Index(string searchString, string sortOrder, int? pageNumber, int? pageSize, 
             string? categoryFilter, string? statusFilter, string? departmentFilter, 
             string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? floorFilter, string? netNameFilter, string? modelFilter, string? serialNumberFilter,
-            string? deskNumberFilter, string? manufacturerFilter, string? purchaseDateFilter)
+            string? deskNumberFilter, string? manufacturerFilter, string? purchaseDateFilter, string? assetTagFilter, string? serviceTagFilter, string? ipAddressFilter, string? osVersionFilter, string? phoneNumberFilter,
+            string? purchasePriceFilter, string? warrantyEndFilter, string? notesFilter, string? macAddressFilter, string? wallPortFilter, string? switchNameFilter, string? switchPortFilter, string? extensionFilter, string? imeiFilter, string? simCardFilter, string? configNotesFilter)
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["OATHTagSortParm"] = String.IsNullOrEmpty(sortOrder) ? "oath_tag_desc" : "";
@@ -48,6 +53,22 @@ namespace AssetManagement.Controllers
             ViewData["DeskNumberFilter"] = deskNumberFilter;
             ViewData["ManufacturerFilter"] = manufacturerFilter;
             ViewData["PurchaseDateFilter"] = purchaseDateFilter;
+            ViewData["AssetTagFilter"] = assetTagFilter;
+            ViewData["ServiceTagFilter"] = serviceTagFilter;
+            ViewData["IPAddressFilter"] = ipAddressFilter;
+            ViewData["OSVersionFilter"] = osVersionFilter;
+            ViewData["PhoneNumberFilter"] = phoneNumberFilter;
+            ViewData["PurchasePriceFilter"] = purchasePriceFilter;
+            ViewData["WarrantyEndFilter"] = warrantyEndFilter;
+            ViewData["NotesFilter"] = notesFilter;
+            ViewData["MACAddressFilter"] = macAddressFilter;
+            ViewData["WallPortFilter"] = wallPortFilter;
+            ViewData["SwitchNameFilter"] = switchNameFilter;
+            ViewData["SwitchPortFilter"] = switchPortFilter;
+            ViewData["ExtensionFilter"] = extensionFilter;
+            ViewData["IMEIFilter"] = imeiFilter;
+            ViewData["SIMCardFilter"] = simCardFilter;
+            ViewData["ConfigNotesFilter"] = configNotesFilter;
             
             // Page size options
             var pageSizeOptions = new List<int> { 10, 25, 50, 100 };
@@ -128,42 +149,178 @@ namespace AssetManagement.Controllers
                 equipment = equipment.Where(e => e.CurrentFloorPlan != null && floors.Contains(e.CurrentFloorPlan.FloorName));
             }
 
-            // Apply Net Name filter
+            // Apply Net Name filter (support multiple values)
             if (!String.IsNullOrEmpty(netNameFilter))
             {
+                var netNames = netNameFilter.Split(',').Select(n => n.Trim()).ToList();
                 equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
                                                 !String.IsNullOrEmpty(e.TechnologyConfiguration.NetName) && 
-                                                e.TechnologyConfiguration.NetName == netNameFilter);
+                                                netNames.Contains(e.TechnologyConfiguration.NetName));
             }
 
-            // Apply Model filter
+            // Apply Model filter (support multiple values)
             if (!String.IsNullOrEmpty(modelFilter))
             {
-                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Model) && e.Model == modelFilter);
+                var models = modelFilter.Split(',').Select(m => m.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Model) && models.Contains(e.Model));
             }
 
-            // Apply Serial Number filter
+            // Apply Serial Number filter (support multiple values)
             if (!String.IsNullOrEmpty(serialNumberFilter))
             {
-                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Serial_Number) && e.Serial_Number == serialNumberFilter);
+                var serialNumbers = serialNumberFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Serial_Number) && serialNumbers.Contains(e.Serial_Number));
             }
 
-            // Apply Desk Number filter
+            // Apply Desk Number filter (support multiple values)
             if (!String.IsNullOrEmpty(deskNumberFilter))
             {
-                equipment = equipment.Where(e => e.CurrentDesk != null && e.CurrentDesk.DeskName == deskNumberFilter);
+                var deskNumbers = deskNumberFilter.Split(',').Select(d => d.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentDesk != null && deskNumbers.Contains(e.CurrentDesk.DeskName));
             }
 
-            // Apply Manufacturer filter
+            // Apply Manufacturer filter (support multiple values)
             if (!String.IsNullOrEmpty(manufacturerFilter))
             {
-                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Manufacturer) && e.Manufacturer == manufacturerFilter);
+                var manufacturers = manufacturerFilter.Split(',').Select(m => m.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Manufacturer) && manufacturers.Contains(e.Manufacturer));
             }
 
-            // Apply Purchase Date filter
+            // Apply Purchase Date filter (support multiple values)
             if (!String.IsNullOrEmpty(purchaseDateFilter))
             {
-                equipment = equipment.Where(e => e.PurchaseDate.HasValue && e.PurchaseDate.Value.ToString("MM/dd/yyyy") == purchaseDateFilter);
+                var purchaseDates = purchaseDateFilter.Split(',').Select(p => p.Trim()).ToList();
+                equipment = equipment.Where(e => e.PurchaseDate.HasValue && purchaseDates.Contains(e.PurchaseDate.Value.ToString("MM/dd/yyyy")));
+            }
+
+            // Apply Asset Tag filter (support multiple values)
+            if (!String.IsNullOrEmpty(assetTagFilter))
+            {
+                var assetTags = assetTagFilter.Split(',').Select(a => a.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Asset_Tag) && assetTags.Contains(e.Asset_Tag));
+            }
+
+            // Apply Service Tag filter (support multiple values)
+            if (!String.IsNullOrEmpty(serviceTagFilter))
+            {
+                var serviceTags = serviceTagFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Service_Tag) && serviceTags.Contains(e.Service_Tag));
+            }
+
+            // Apply IP Address filter (support multiple values)
+            if (!String.IsNullOrEmpty(ipAddressFilter))
+            {
+                var ipAddresses = ipAddressFilter.Split(',').Select(i => i.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.IP_Address) && ipAddresses.Contains(e.IP_Address));
+            }
+
+            // Apply OS Version filter (support multiple values)
+            if (!String.IsNullOrEmpty(osVersionFilter))
+            {
+                var osVersions = osVersionFilter.Split(',').Select(o => o.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.OS_Version) && osVersions.Contains(e.OS_Version));
+            }
+
+            // Apply Phone Number filter (support multiple values)
+            if (!String.IsNullOrEmpty(phoneNumberFilter))
+            {
+                var phoneNumbers = phoneNumberFilter.Split(',').Select(p => p.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.PhoneNumber) && 
+                                                phoneNumbers.Contains(e.TechnologyConfiguration.PhoneNumber));
+            }
+
+            // Apply Purchase Price filter (support multiple values)
+            if (!String.IsNullOrEmpty(purchasePriceFilter))
+            {
+                var purchasePrices = purchasePriceFilter.Split(',').Select(p => p.Trim()).ToList();
+                equipment = equipment.Where(e => e.PurchasePrice.HasValue && purchasePrices.Contains(e.PurchasePrice.Value.ToString("C")));
+            }
+
+            // Apply Warranty End filter (support multiple values)
+            if (!String.IsNullOrEmpty(warrantyEndFilter))
+            {
+                var warrantyEnds = warrantyEndFilter.Split(',').Select(w => w.Trim()).ToList();
+                equipment = equipment.Where(e => e.WarrantyEndDate.HasValue && warrantyEnds.Contains(e.WarrantyEndDate.Value.ToString("MM/dd/yyyy")));
+            }
+
+            // Apply Notes filter (support multiple values)
+            if (!String.IsNullOrEmpty(notesFilter))
+            {
+                var notes = notesFilter.Split(',').Select(n => n.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Notes) && notes.Contains(e.Notes));
+            }
+
+            // Apply MAC Address filter (support multiple values)
+            if (!String.IsNullOrEmpty(macAddressFilter))
+            {
+                var macAddresses = macAddressFilter.Split(',').Select(m => m.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.MACAddress) && 
+                                                macAddresses.Contains(e.TechnologyConfiguration.MACAddress));
+            }
+
+            // Apply Wall Port filter (support multiple values)
+            if (!String.IsNullOrEmpty(wallPortFilter))
+            {
+                var wallPorts = wallPortFilter.Split(',').Select(w => w.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.WallPort) && 
+                                                wallPorts.Contains(e.TechnologyConfiguration.WallPort));
+            }
+
+            // Apply Switch Name filter (support multiple values)
+            if (!String.IsNullOrEmpty(switchNameFilter))
+            {
+                var switchNames = switchNameFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.SwitchName) && 
+                                                switchNames.Contains(e.TechnologyConfiguration.SwitchName));
+            }
+
+            // Apply Switch Port filter (support multiple values)
+            if (!String.IsNullOrEmpty(switchPortFilter))
+            {
+                var switchPorts = switchPortFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.SwitchPort) && 
+                                                switchPorts.Contains(e.TechnologyConfiguration.SwitchPort));
+            }
+
+            // Apply Extension filter (support multiple values)
+            if (!String.IsNullOrEmpty(extensionFilter))
+            {
+                var extensions = extensionFilter.Split(',').Select(e => e.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.Extension) && 
+                                                extensions.Contains(e.TechnologyConfiguration.Extension));
+            }
+
+            // Apply IMEI filter (support multiple values)
+            if (!String.IsNullOrEmpty(imeiFilter))
+            {
+                var imeis = imeiFilter.Split(',').Select(i => i.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.IMEI) && 
+                                                imeis.Contains(e.TechnologyConfiguration.IMEI));
+            }
+
+            // Apply SIM Card filter (support multiple values)
+            if (!String.IsNullOrEmpty(simCardFilter))
+            {
+                var simCards = simCardFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.SIMCardNumber) && 
+                                                simCards.Contains(e.TechnologyConfiguration.SIMCardNumber));
+            }
+
+            // Apply Config Notes filter (support multiple values)
+            if (!String.IsNullOrEmpty(configNotesFilter))
+            {
+                var configNotes = configNotesFilter.Split(',').Select(c => c.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.ConfigurationNotes) && 
+                                                configNotes.Contains(e.TechnologyConfiguration.ConfigurationNotes));
             }
 
 
@@ -297,14 +454,14 @@ namespace AssetManagement.Controllers
                 .ToListAsync();
 
             // Get Purchase Date options
-            var purchaseDates = await _context.Equipment
+            var purchaseDateOptions = await _context.Equipment
                 .Where(e => e.PurchaseDate.HasValue)
                 .Select(e => e.PurchaseDate.Value)
                 .Distinct()
                 .OrderBy(p => p)
                 .ToListAsync();
             
-            ViewData["PurchaseDateOptions"] = purchaseDates
+            ViewData["PurchaseDateOptions"] = purchaseDateOptions
                 .Select(d => d.ToString("MM/dd/yyyy"))
                 .ToList();
 
@@ -341,22 +498,22 @@ namespace AssetManagement.Controllers
                 .ToListAsync();
 
             // Get Phone Number options
-            ViewData["PhoneNumberOptions"] = await _context.Equipment
-                .Where(e => !String.IsNullOrEmpty(e.Phone_Number))
-                .Select(e => e.Phone_Number)
+            ViewData["PhoneNumberOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.PhoneNumber))
+                .Select(tc => tc.PhoneNumber)
                 .Distinct()
                 .OrderBy(p => p)
                 .ToListAsync();
 
             // Get Purchase Price options
-            var purchasePrices = await _context.Equipment
+            var purchasePriceOptions = await _context.Equipment
                 .Where(e => e.PurchasePrice.HasValue)
                 .Select(e => e.PurchasePrice.Value)
                 .Distinct()
                 .OrderBy(p => p)
                 .ToListAsync();
             
-            ViewData["PurchasePriceOptions"] = purchasePrices
+            ViewData["PurchasePriceOptions"] = purchasePriceOptions
                 .Select(p => p.ToString("C"))
                 .ToList();
 
@@ -378,6 +535,70 @@ namespace AssetManagement.Controllers
                 .Select(e => e.Notes.Length > 50 ? e.Notes.Substring(0, 50) + "..." : e.Notes)
                 .Distinct()
                 .OrderBy(n => n)
+                .ToListAsync();
+
+            // Get MAC Address options
+            ViewData["MACAddressOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.MACAddress))
+                .Select(tc => tc.MACAddress)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToListAsync();
+
+            // Get Wall Port options
+            ViewData["WallPortOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.WallPort))
+                .Select(tc => tc.WallPort)
+                .Distinct()
+                .OrderBy(w => w)
+                .ToListAsync();
+
+            // Get Switch Name options
+            ViewData["SwitchNameOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.SwitchName))
+                .Select(tc => tc.SwitchName)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+
+            // Get Switch Port options
+            ViewData["SwitchPortOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.SwitchPort))
+                .Select(tc => tc.SwitchPort)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+
+            // Get Extension options
+            ViewData["ExtensionOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.Extension))
+                .Select(tc => tc.Extension)
+                .Distinct()
+                .OrderBy(e => e)
+                .ToListAsync();
+
+            // Get IMEI options
+            ViewData["IMEIOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.IMEI))
+                .Select(tc => tc.IMEI)
+                .Distinct()
+                .OrderBy(i => i)
+                .ToListAsync();
+
+            // Get SIM Card options
+            ViewData["SIMCardOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.SIMCardNumber))
+                .Select(tc => tc.SIMCardNumber)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+
+            // Get Config Notes options (first 50 characters for filtering)
+            ViewData["ConfigNotesOptions"] = await _context.TechnologyConfigurations
+                .Where(tc => !String.IsNullOrEmpty(tc.ConfigurationNotes))
+                .Select(tc => tc.ConfigurationNotes.Length > 50 ? tc.ConfigurationNotes.Substring(0, 50) + "..." : tc.ConfigurationNotes)
+                .Distinct()
+                .OrderBy(c => c)
                 .ToListAsync();
 
             int currentPageSize = pageSize ?? 20;
@@ -823,507 +1044,468 @@ namespace AssetManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
-
-        private bool EquipmentExists(int id)
+        // GET: Equipment/Export
+        public async Task<IActionResult> Export(string searchString, string sortOrder, 
+            string? categoryFilter, string? statusFilter, string? departmentFilter, 
+            string? oathTagFilter, string? assignedToFilter, string? locationFilter, string? floorFilter, string? netNameFilter, string? modelFilter, string? serialNumberFilter,
+            string? deskNumberFilter, string? manufacturerFilter, string? purchaseDateFilter, string? assetTagFilter, string? serviceTagFilter, string? ipAddressFilter, string? osVersionFilter, string? phoneNumberFilter,
+            string? purchasePriceFilter, string? warrantyEndFilter, string? notesFilter, string? macAddressFilter, string? wallPortFilter, string? switchNameFilter, string? switchPortFilter, string? extensionFilter, string? imeiFilter, string? simCardFilter, string? configNotesFilter,
+            string? visibleColumns = null)
         {
-            return _context.Equipment.Any(e => e.Id == id);
-        }
+            // Set EPPlus license context
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetAssetCategorySelectList()
-        {
-            var categories = await _context.AssetCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(categories, "Id", "Name");
-        }
+            // Get filtered equipment data (same logic as Index method)
+            var equipment = _context.Equipment
+                .Include(e => e.AssetCategory)
+                .Include(e => e.CurrentStatus)
+                .Include(e => e.CurrentLocation)
+                .Include(e => e.CurrentFloorPlan)
+                .Include(e => e.CurrentDesk)
+                .Include(e => e.TechnologyConfiguration)
+                .AsQueryable();
 
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetAssetStatusSelectList()
-        {
-            var statuses = await _context.AssetStatuses
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.Name)
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(statuses, "Id", "Name");
-        }
-
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetLocationSelectList()
-        {
-            var locations = await _context.Locations
-                .Where(l => l.IsActive)
-                .OrderBy(l => l.Name)
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(locations, "Id", "Name");
-        }
-
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetFloorPlanSelectList()
-        {
-            var floorPlans = await _context.FloorPlans
-                .Include(fp => fp.Location)
-                .Where(fp => fp.IsActive)
-                .OrderBy(fp => fp.Location!.Name)
-                .ThenBy(fp => fp.FloorNumber)
-                .Select(fp => new { 
-                    Id = fp.Id, 
-                    DisplayText = $"{fp.Location!.Name} - Floor {fp.FloorNumber}"
-                })
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(floorPlans, "Id", "DisplayText");
-        }
-
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetDeskSelectList()
-        {
-            var desks = await _context.Desks
-                .Where(d => d.IsActive)
-                .OrderBy(d => d.DeskNumber)
-                .Select(d => new {
-                    Id = d.Id,
-                    DisplayText = $"{d.DeskNumber}{(d.DeskName != null ? " - " + d.DeskName : "")}"
-                })
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(desks, "Id", "DisplayText");
-        }
-
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetPersonSelectList()
-        {
-            var people = await _context.People
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.FullName)
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(people, "Id", "FullName");
-        }
-
-        private async Task<Microsoft.AspNetCore.Mvc.Rendering.SelectList> GetEntraUserSelectList()
-        {
-            var entraUsers = await _context.EntraUsers
-                .Where(eu => eu.AccountEnabled)
-                .OrderBy(eu => eu.DisplayName)
-                .ToListAsync();
-            return new Microsoft.AspNetCore.Mvc.Rendering.SelectList(entraUsers, "Id", "DisplayName");
-        }
-
-        private async Task LogEquipmentAction(int equipmentId, string action, string description)
-        {
-            var auditLog = new AssetAuditLog
+            // Apply search filter
+            if (!String.IsNullOrEmpty(searchString))
             {
-                EquipmentId = equipmentId,
-                Action = action,
-                PerformedBy = User.Identity?.Name ?? "System",
-                PerformedByEmail = User.Identity?.Name ?? "system@oath.nyc.gov",
-                PerformedAt = DateTime.UtcNow,
-                AdditionalData = description,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                equipment = equipment.Where(e => e.OATH_Tag.Contains(searchString) ||
+                                                e.Serial_Number.Contains(searchString) ||
+                                                e.Model.Contains(searchString) ||
+                                                e.Assigned_User_Name.Contains(searchString) ||
+                                                e.Assigned_User_Email.Contains(searchString) ||
+                                                (e.AssetCategory != null && e.AssetCategory.Name.Contains(searchString)) ||
+                                                (e.CurrentLocation != null && e.CurrentLocation.Name.Contains(searchString)) ||
+                                                (e.TechnologyConfiguration != null && e.TechnologyConfiguration.NetName.Contains(searchString)));
+            }
+
+            // Apply all filters (same logic as Index method)
+            if (!String.IsNullOrEmpty(categoryFilter))
+            {
+                var categories = categoryFilter.Split(',').Select(c => c.Trim()).ToList();
+                equipment = equipment.Where(e => e.AssetCategory != null && categories.Contains(e.AssetCategory.Name));
+            }
+
+            if (!String.IsNullOrEmpty(statusFilter))
+            {
+                var statuses = statusFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentStatus != null && statuses.Contains(e.CurrentStatus.Name));
+            }
+
+            if (!String.IsNullOrEmpty(departmentFilter))
+            {
+                var departments = departmentFilter.Split(',').Select(d => d.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Department) && departments.Contains(e.Department));
+            }
+
+            if (!String.IsNullOrEmpty(oathTagFilter))
+            {
+                var oathTags = oathTagFilter.Split(',').Select(o => o.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.OATH_Tag) && oathTags.Contains(e.OATH_Tag));
+            }
+
+            if (!String.IsNullOrEmpty(assignedToFilter))
+            {
+                var assignedUsers = assignedToFilter.Split(',').Select(a => a.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Assigned_User_Name) && assignedUsers.Contains(e.Assigned_User_Name));
+            }
+
+            if (!String.IsNullOrEmpty(locationFilter))
+            {
+                var locations = locationFilter.Split(',').Select(l => l.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentLocation != null && locations.Contains(e.CurrentLocation.Name.Split(new string[] { " - " }, StringSplitOptions.None)[0]));
+            }
+
+            if (!String.IsNullOrEmpty(floorFilter))
+            {
+                var floors = floorFilter.Split(',').Select(f => f.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentFloorPlan != null && floors.Contains(e.CurrentFloorPlan.FloorName));
+            }
+
+            if (!String.IsNullOrEmpty(netNameFilter))
+            {
+                var netNames = netNameFilter.Split(',').Select(n => n.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.NetName) && 
+                                                netNames.Contains(e.TechnologyConfiguration.NetName));
+            }
+
+            if (!String.IsNullOrEmpty(modelFilter))
+            {
+                var models = modelFilter.Split(',').Select(m => m.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Model) && models.Contains(e.Model));
+            }
+
+            if (!String.IsNullOrEmpty(serialNumberFilter))
+            {
+                var serialNumbers = serialNumberFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Serial_Number) && serialNumbers.Contains(e.Serial_Number));
+            }
+
+            if (!String.IsNullOrEmpty(deskNumberFilter))
+            {
+                var deskNumbers = deskNumberFilter.Split(',').Select(d => d.Trim()).ToList();
+                equipment = equipment.Where(e => e.CurrentDesk != null && deskNumbers.Contains(e.CurrentDesk.DeskName));
+            }
+
+            if (!String.IsNullOrEmpty(manufacturerFilter))
+            {
+                var manufacturers = manufacturerFilter.Split(',').Select(m => m.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Manufacturer) && manufacturers.Contains(e.Manufacturer));
+            }
+
+            if (!String.IsNullOrEmpty(purchaseDateFilter))
+            {
+                var purchaseDates = purchaseDateFilter.Split(',').Select(p => p.Trim()).ToList();
+                equipment = equipment.Where(e => e.PurchaseDate.HasValue && purchaseDates.Contains(e.PurchaseDate.Value.ToString("MM/dd/yyyy")));
+            }
+
+            if (!String.IsNullOrEmpty(assetTagFilter))
+            {
+                var assetTags = assetTagFilter.Split(',').Select(a => a.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Asset_Tag) && assetTags.Contains(e.Asset_Tag));
+            }
+
+            if (!String.IsNullOrEmpty(serviceTagFilter))
+            {
+                var serviceTags = serviceTagFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Service_Tag) && serviceTags.Contains(e.Service_Tag));
+            }
+
+            if (!String.IsNullOrEmpty(ipAddressFilter))
+            {
+                var ipAddresses = ipAddressFilter.Split(',').Select(i => i.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.IP_Address) && ipAddresses.Contains(e.IP_Address));
+            }
+
+            if (!String.IsNullOrEmpty(osVersionFilter))
+            {
+                var osVersions = osVersionFilter.Split(',').Select(o => o.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.OS_Version) && osVersions.Contains(e.OS_Version));
+            }
+
+            if (!String.IsNullOrEmpty(phoneNumberFilter))
+            {
+                var phoneNumbers = phoneNumberFilter.Split(',').Select(p => p.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.PhoneNumber) && 
+                                                phoneNumbers.Contains(e.TechnologyConfiguration.PhoneNumber));
+            }
+
+            if (!String.IsNullOrEmpty(purchasePriceFilter))
+            {
+                var purchasePrices = purchasePriceFilter.Split(',').Select(p => p.Trim()).ToList();
+                equipment = equipment.Where(e => e.PurchasePrice.HasValue && purchasePrices.Contains(e.PurchasePrice.Value.ToString("C")));
+            }
+
+            if (!String.IsNullOrEmpty(warrantyEndFilter))
+            {
+                var warrantyEnds = warrantyEndFilter.Split(',').Select(w => w.Trim()).ToList();
+                equipment = equipment.Where(e => e.WarrantyEndDate.HasValue && warrantyEnds.Contains(e.WarrantyEndDate.Value.ToString("MM/dd/yyyy")));
+            }
+
+            if (!String.IsNullOrEmpty(notesFilter))
+            {
+                var notes = notesFilter.Split(',').Select(n => n.Trim()).ToList();
+                equipment = equipment.Where(e => !String.IsNullOrEmpty(e.Notes) && notes.Contains(e.Notes));
+            }
+
+            if (!String.IsNullOrEmpty(macAddressFilter))
+            {
+                var macAddresses = macAddressFilter.Split(',').Select(m => m.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.MACAddress) && 
+                                                macAddresses.Contains(e.TechnologyConfiguration.MACAddress));
+            }
+
+            if (!String.IsNullOrEmpty(wallPortFilter))
+            {
+                var wallPorts = wallPortFilter.Split(',').Select(w => w.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.WallPort) && 
+                                                wallPorts.Contains(e.TechnologyConfiguration.WallPort));
+            }
+
+            if (!String.IsNullOrEmpty(switchNameFilter))
+            {
+                var switchNames = switchNameFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.SwitchName) && 
+                                                switchNames.Contains(e.TechnologyConfiguration.SwitchName));
+            }
+
+            if (!String.IsNullOrEmpty(switchPortFilter))
+            {
+                var switchPorts = switchPortFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.SwitchPort) && 
+                                                switchPorts.Contains(e.TechnologyConfiguration.SwitchPort));
+            }
+
+            if (!String.IsNullOrEmpty(extensionFilter))
+            {
+                var extensions = extensionFilter.Split(',').Select(e => e.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.Extension) && 
+                                                extensions.Contains(e.TechnologyConfiguration.Extension));
+            }
+
+            if (!String.IsNullOrEmpty(imeiFilter))
+            {
+                var imeis = imeiFilter.Split(',').Select(i => i.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.IMEI) && 
+                                                imeis.Contains(e.TechnologyConfiguration.IMEI));
+            }
+
+            if (!String.IsNullOrEmpty(simCardFilter))
+            {
+                var simCards = simCardFilter.Split(',').Select(s => s.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.SIMCardNumber) && 
+                                                simCards.Contains(e.TechnologyConfiguration.SIMCardNumber));
+            }
+
+            if (!String.IsNullOrEmpty(configNotesFilter))
+            {
+                var configNotes = configNotesFilter.Split(',').Select(c => c.Trim()).ToList();
+                equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
+                                                !String.IsNullOrEmpty(e.TechnologyConfiguration.ConfigurationNotes) && 
+                                                configNotes.Contains(e.TechnologyConfiguration.ConfigurationNotes));
+            }
+
+            // Apply sorting
+            equipment = sortOrder switch
+            {
+                "oath_tag_desc" => equipment.OrderByDescending(e => e.OATH_Tag),
+                "netname" => equipment.OrderBy(e => e.TechnologyConfiguration != null ? e.TechnologyConfiguration.NetName : ""),
+                "netname_desc" => equipment.OrderByDescending(e => e.TechnologyConfiguration != null ? e.TechnologyConfiguration.NetName : ""),
+                "model" => equipment.OrderBy(e => e.Model),
+                "model_desc" => equipment.OrderByDescending(e => e.Model),
+                "status" => equipment.OrderBy(e => e.CurrentStatus != null ? e.CurrentStatus.Name : ""),
+                "status_desc" => equipment.OrderByDescending(e => e.CurrentStatus != null ? e.CurrentStatus.Name : ""),
+                "location" => equipment.OrderBy(e => e.CurrentLocation != null ? e.CurrentLocation.Name : ""),
+                "location_desc" => equipment.OrderByDescending(e => e.CurrentLocation != null ? e.CurrentLocation.Name : ""),
+                "floor" => equipment.OrderBy(e => e.CurrentFloorPlan != null ? e.CurrentFloorPlan.FloorName : ""),
+                "floor_desc" => equipment.OrderByDescending(e => e.CurrentFloorPlan != null ? e.CurrentFloorPlan.FloorName : ""),
+                "assigned" => equipment.OrderBy(e => e.Assigned_User_Name),
+                "assigned_desc" => equipment.OrderByDescending(e => e.Assigned_User_Name),
+                "category" => equipment.OrderBy(e => e.AssetCategory != null ? e.AssetCategory.Name : ""),
+                "category_desc" => equipment.OrderByDescending(e => e.AssetCategory != null ? e.AssetCategory.Name : ""),
+                "department" => equipment.OrderBy(e => e.Department),
+                "department_desc" => equipment.OrderByDescending(e => e.Department),
+                "serialnumber" => equipment.OrderBy(e => e.Serial_Number),
+                "serialnumber_desc" => equipment.OrderByDescending(e => e.Serial_Number),
+                "desknumber" => equipment.OrderBy(e => e.CurrentDesk != null ? e.CurrentDesk.DeskName : ""),
+                "desknumber_desc" => equipment.OrderByDescending(e => e.CurrentDesk != null ? e.CurrentDesk.DeskName : ""),
+                "manufacturer" => equipment.OrderBy(e => e.Manufacturer),
+                "manufacturer_desc" => equipment.OrderByDescending(e => e.Manufacturer),
+                "purchasedate" => equipment.OrderBy(e => e.PurchaseDate),
+                "purchasedate_desc" => equipment.OrderByDescending(e => e.PurchaseDate),
+                _ => equipment.OrderBy(e => e.OATH_Tag),
             };
 
-            _context.AssetAuditLogs.Add(auditLog);
-            await _context.SaveChangesAsync();
-        }
+            var equipmentList = await equipment.AsNoTracking().ToListAsync();
 
-        private async Task LogEquipmentChanges(Equipment? original, Equipment updated)
-        {
-            if (original == null) return;
-
-            var changes = new List<string>();
-
-            if (original.CurrentStatusId != updated.CurrentStatusId)
+            // Create Excel package
+            using (var package = new ExcelPackage())
             {
-                var oldStatus = await _context.AssetStatuses.FindAsync(original.CurrentStatusId);
-                var newStatus = await _context.AssetStatuses.FindAsync(updated.CurrentStatusId);
-                changes.Add($"Status changed from '{oldStatus?.Name ?? "None"}' to '{newStatus?.Name ?? "None"}'");
-            }
+                var worksheet = package.Workbook.Worksheets.Add("Equipment");
 
-            if (original.CurrentLocationId != updated.CurrentLocationId)
-            {
-                var oldLocation = await _context.Locations.FindAsync(original.CurrentLocationId);
-                var newLocation = await _context.Locations.FindAsync(updated.CurrentLocationId);
-                changes.Add($"Location changed from '{oldLocation?.Name ?? "None"}' to '{newLocation?.Name ?? "None"}'");
-            }
-
-            if (original.AssignedPersonId != updated.AssignedPersonId)
-            {
-                var oldPerson = await _context.People.FindAsync(original.AssignedPersonId);
-                var newPerson = await _context.People.FindAsync(updated.AssignedPersonId);
-                changes.Add($"Assigned person changed from '{oldPerson?.FullName ?? "None"}' to '{newPerson?.FullName ?? "None"}'");
-            }
-
-            if (changes.Any())
-            {
-                var auditLog = new AssetAuditLog
+                // Define all possible columns
+                var allColumns = new Dictionary<string, string>
                 {
-                    EquipmentId = updated.Id,
-                    Action = "Updated",
-                    PerformedBy = User.Identity?.Name ?? "System",
-                    PerformedByEmail = User.Identity?.Name ?? "system@oath.nyc.gov",
-                    PerformedAt = DateTime.UtcNow,
-                    AdditionalData = string.Join("; ", changes),
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                    { "oath-tag", "OATH Tag" },
+                    { "assigned-to", "Assigned To" },
+                    { "category", "Category" },
+                    { "unit", "Unit" },
+                    { "location", "Location" },
+                    { "floor", "Floor" },
+                    { "status", "Status" },
+                    { "net-name", "Net Name" },
+                    { "model", "Model" },
+                    { "serial-number", "Serial Number" },
+                    { "desk-number", "Desk Number" },
+                    { "manufacturer", "Manufacturer" },
+                    { "purchase-date", "Purchase Date" },
+                    { "asset-tag", "Asset Tag" },
+                    { "service-tag", "Service Tag" },
+                    { "ip-address", "IP Address" },
+                    { "os-version", "OS Version" },
+                    { "phone-number", "Phone Number" },
+                    { "purchase-price", "Purchase Price" },
+                    { "warranty-end", "Warranty End" },
+                    { "notes", "Notes" },
+                    { "mac-address", "MAC Address" },
+                    { "wall-port", "Wall Port" },
+                    { "switch-name", "Switch Name" },
+                    { "switch-port", "Switch Port" },
+                    { "extension", "Extension" },
+                    { "imei", "IMEI" },
+                    { "sim-card", "SIM Card" },
+                    { "config-notes", "Config Notes" },
+                    { "created-at", "Created At" },
+                    { "updated-at", "Updated At" }
                 };
 
-                _context.AssetAuditLogs.Add(auditLog);
-                await _context.SaveChangesAsync();
+                // Determine visible columns
+                var visibleColumnList = new List<string>();
+                if (!string.IsNullOrEmpty(visibleColumns))
+                {
+                    visibleColumnList = visibleColumns.Split(',').Select(c => c.Trim()).ToList();
+                }
+                else
+                {
+                    // If no visible columns specified, show all
+                    visibleColumnList = allColumns.Keys.ToList();
+                }
+
+                // Filter headers to only include visible columns
+                var headers = visibleColumnList
+                    .Where(col => allColumns.ContainsKey(col))
+                    .Select(col => allColumns[col])
+                    .ToArray();
+
+                // Add headers
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    worksheet.Cells[1, i + 1].Value = headers[i];
+                    worksheet.Cells[1, i + 1].Style.Font.Bold = true;
+                    worksheet.Cells[1, i + 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 1].Style.Fill.BackgroundColor.SetColor(Color.LightGray);
+                    worksheet.Cells[1, i + 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                }
+
+                // Add data
+                for (int row = 0; row < equipmentList.Count; row++)
+                {
+                    var item = equipmentList[row];
+                    int col = 1;
+
+                    foreach (var columnKey in visibleColumnList)
+                    {
+                        if (!allColumns.ContainsKey(columnKey)) continue;
+
+                        switch (columnKey)
+                        {
+                            case "oath-tag":
+                                worksheet.Cells[row + 2, col++].Value = item.OATH_Tag;
+                                break;
+                            case "assigned-to":
+                                worksheet.Cells[row + 2, col++].Value = item.Assigned_User_Name;
+                                break;
+                            case "category":
+                                worksheet.Cells[row + 2, col++].Value = item.AssetCategory?.Name;
+                                break;
+                            case "unit":
+                                worksheet.Cells[row + 2, col++].Value = item.Department;
+                                break;
+                            case "location":
+                                worksheet.Cells[row + 2, col++].Value = item.CurrentLocation?.Name;
+                                break;
+                            case "floor":
+                                worksheet.Cells[row + 2, col++].Value = item.CurrentFloorPlan?.FloorName;
+                                break;
+                            case "status":
+                                worksheet.Cells[row + 2, col++].Value = item.CurrentStatus?.Name;
+                                break;
+                            case "net-name":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.NetName;
+                                break;
+                            case "model":
+                                worksheet.Cells[row + 2, col++].Value = item.Model;
+                                break;
+                            case "serial-number":
+                                worksheet.Cells[row + 2, col++].Value = item.Serial_Number;
+                                break;
+                            case "desk-number":
+                                worksheet.Cells[row + 2, col++].Value = item.CurrentDesk?.DeskName;
+                                break;
+                            case "manufacturer":
+                                worksheet.Cells[row + 2, col++].Value = item.Manufacturer;
+                                break;
+                            case "purchase-date":
+                                worksheet.Cells[row + 2, col++].Value = item.PurchaseDate?.ToString("MM/dd/yyyy");
+                                break;
+                            case "asset-tag":
+                                worksheet.Cells[row + 2, col++].Value = item.Asset_Tag;
+                                break;
+                            case "service-tag":
+                                worksheet.Cells[row + 2, col++].Value = item.Service_Tag;
+                                break;
+                            case "ip-address":
+                                worksheet.Cells[row + 2, col++].Value = item.IP_Address;
+                                break;
+                            case "os-version":
+                                worksheet.Cells[row + 2, col++].Value = item.OS_Version;
+                                break;
+                            case "phone-number":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.PhoneNumber;
+                                break;
+                            case "purchase-price":
+                                worksheet.Cells[row + 2, col++].Value = item.PurchasePrice?.ToString("C");
+                                break;
+                            case "warranty-end":
+                                worksheet.Cells[row + 2, col++].Value = item.WarrantyEndDate?.ToString("MM/dd/yyyy");
+                                break;
+                            case "notes":
+                                worksheet.Cells[row + 2, col++].Value = item.Notes;
+                                break;
+                            case "mac-address":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.MACAddress;
+                                break;
+                            case "wall-port":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.WallPort;
+                                break;
+                            case "switch-name":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.SwitchName;
+                                break;
+                            case "switch-port":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.SwitchPort;
+                                break;
+                            case "extension":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.Extension;
+                                break;
+                            case "imei":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.IMEI;
+                                break;
+                            case "sim-card":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.SIMCardNumber;
+                                break;
+                            case "config-notes":
+                                worksheet.Cells[row + 2, col++].Value = item.TechnologyConfiguration?.ConfigurationNotes;
+                                break;
+                            case "created-at":
+                                worksheet.Cells[row + 2, col++].Value = item.CreatedAt.ToString("MM/dd/yyyy HH:mm");
+                                break;
+                            case "updated-at":
+                                worksheet.Cells[row + 2, col++].Value = item.UpdatedAt?.ToString("MM/dd/yyyy HH:mm");
+                                break;
+                        }
+                    }
+                }
+
+                // Auto-fit columns
+                worksheet.Cells.AutoFitColumns();
+
+                // Add borders to all cells
+                var dataRange = worksheet.Cells[1, 1, equipmentList.Count + 1, headers.Length];
+                dataRange.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                dataRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                dataRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                dataRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+                // Generate filename with timestamp
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var filename = $"Equipment_Export_{timestamp}.xlsx";
+
+                // Return the Excel file
+                var content = package.GetAsByteArray();
+                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
             }
         }
 
-        // DataTable Inline Editing
-        [HttpPost]
-        [Route("Equipment/UpdateField")]
-        public async Task<IActionResult> UpdateField([FromBody] InlineEditRequest request)
-        {
-            try
-            {
-                // Debug logging
-                Console.WriteLine($"UpdateField called with ID: {request.Id}, Field: {request.Field}, Value: {request.Value}");
-                
-                // Try to find equipment by OATH tag first, then by ID
-                var equipment = await _context.Equipment
-                    .Include(e => e.TechnologyConfiguration)
-                    .FirstOrDefaultAsync(e => e.OATH_Tag == request.Id || e.Id.ToString() == request.Id);
-                
-                Console.WriteLine($"Looking for equipment with OATH Tag or ID: {request.Id}");
-                Console.WriteLine($"Equipment found: {equipment != null}");
-                
-                if (equipment == null)
-                {
-                    // Get some sample equipment for debugging
-                    var sampleEquipment = await _context.Equipment.Take(10).Select(e => new { e.Id, e.OATH_Tag }).ToListAsync();
-                    Console.WriteLine($"Sample equipment in database: {string.Join(", ", sampleEquipment.Select(e => $"{e.Id}({e.OATH_Tag})"))}");
-                    
-                    return Json(new InlineEditResponse { 
-                        Success = false, 
-                        Message = $"Equipment with OATH Tag/ID {request.Id} not found. Sample equipment: {string.Join(", ", sampleEquipment.Select(e => $"{e.OATH_Tag}(ID:{e.Id})"))}. Please refresh the page and try again." 
-                    });
-                }
-
-                var originalEquipment = new Equipment
-                {
-                    Id = equipment.Id,
-                    CurrentStatusId = equipment.CurrentStatusId,
-                    CurrentLocationId = equipment.CurrentLocationId,
-                    AssignedPersonId = equipment.AssignedPersonId
-                };
-
-                switch (request.Field.ToLower())
-                {
-                    case "oath_tag":
-                        var newOathTag = request.Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(newOathTag))
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "OATH Tag cannot be empty" });
-                        }
-                        
-                        // Check if OATH Tag already exists (excluding current equipment)
-                        var existingEquipment = await _context.Equipment
-                            .FirstOrDefaultAsync(e => e.OATH_Tag == newOathTag && e.Id != equipment.Id);
-                        if (existingEquipment != null)
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "OATH Tag already exists" });
-                        }
-                        
-                        equipment.OATH_Tag = newOathTag;
-                        await LogEquipmentAction(equipment.Id, "OATH Tag Updated", $"OATH Tag set to {request.Value}");
-                        break;
-
-                    case "assigned_user_name":
-                        equipment.Assigned_User_Name = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Assigned User Updated", $"Assigned user set to {request.Value}");
-                        break;
-
-                    case "assetcategoryid":
-                        // Find the category by name
-                        var categoryName = request.Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(categoryName))
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Category cannot be empty" });
-                        }
-                        
-                        var category = await _context.AssetCategories
-                            .FirstOrDefaultAsync(c => c.Name == categoryName && c.IsActive);
-                        if (category == null)
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = $"Category '{categoryName}' not found" });
-                        }
-                        
-                        equipment.AssetCategoryId = category.Id;
-                        await LogEquipmentAction(equipment.Id, "Category Updated", $"Category set to {categoryName}");
-                        break;
-
-                    case "department":
-                        equipment.Department = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Department Updated", $"Department set to {request.Value}");
-                        break;
-
-                    case "currentlocationid":
-                        // Find the location by name
-                        var locationName = request.Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(locationName))
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Location cannot be empty" });
-                        }
-                        
-                        var location = await _context.Locations
-                            .FirstOrDefaultAsync(l => l.Name == locationName && l.IsActive);
-                        if (location == null)
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = $"Location '{locationName}' not found" });
-                        }
-                        
-                        equipment.CurrentLocationId = location.Id;
-                        await LogEquipmentAction(equipment.Id, "Location Updated", $"Location set to {locationName}");
-                        break;
-
-                    case "currentfloorplanid":
-                        // Find the floor plan by name
-                        var floorName = request.Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(floorName))
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Floor cannot be empty" });
-                        }
-                        
-                        // Try exact match first, then partial match
-                        var floorPlan = await _context.FloorPlans
-                            .FirstOrDefaultAsync(f => f.FloorName == floorName && f.IsActive);
-                        
-                        if (floorPlan == null)
-                        {
-                            // Try partial match for cases like "3" matching "3rd Floor"
-                            floorPlan = await _context.FloorPlans
-                                .FirstOrDefaultAsync(f => f.FloorName.Contains(floorName) && f.IsActive);
-                        }
-                        
-                        if (floorPlan == null)
-                        {
-                            // Get available floors for debugging
-                            var availableFloors = await _context.FloorPlans
-                                .Where(f => f.IsActive)
-                                .Select(f => f.FloorName)
-                                .ToListAsync();
-                            
-                            return Json(new InlineEditResponse { 
-                                Success = false, 
-                                Message = $"Floor '{floorName}' not found. Available floors: {string.Join(", ", availableFloors)}" 
-                            });
-                        }
-                        
-                        equipment.CurrentFloorPlanId = floorPlan.Id;
-                        await LogEquipmentAction(equipment.Id, "Floor Updated", $"Floor set to {floorPlan.FloorName}");
-                        break;
-
-                    case "currentdeskid":
-                        // Find the desk by name
-                        var deskName = request.Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(deskName))
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Desk cannot be empty" });
-                        }
-                        
-                        var desk = await _context.Desks
-                            .FirstOrDefaultAsync(d => d.DeskName == deskName && d.IsActive);
-                        if (desk == null)
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = $"Desk '{deskName}' not found" });
-                        }
-                        
-                        equipment.CurrentDeskId = desk.Id;
-                        await LogEquipmentAction(equipment.Id, "Desk Updated", $"Desk set to {deskName}");
-                        break;
-
-                    case "model":
-                        equipment.Model = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Model Updated", $"Model set to {request.Value}");
-                        break;
-
-                    case "serial_number":
-                        equipment.Serial_Number = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Serial Number Updated", $"Serial number set to {request.Value}");
-                        break;
-
-                    case "manufacturer":
-                        equipment.Manufacturer = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Manufacturer Updated", $"Manufacturer set to {request.Value}");
-                        break;
-
-                    case "purchasedate":
-                        if (DateTime.TryParse(request.Value?.ToString(), out DateTime purchaseDate))
-                        {
-                            equipment.PurchaseDate = purchaseDate;
-                            await LogEquipmentAction(equipment.Id, "Purchase Date Updated", $"Purchase date set to {purchaseDate:MM/dd/yyyy}");
-                        }
-                        else
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Invalid date format. Please use MM/dd/yyyy" });
-                        }
-                        break;
-
-                    case "currentstatusid":
-                        // Find the status by name
-                        var statusName = request.Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(statusName))
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Status cannot be empty" });
-                        }
-                        
-                        var status = await _context.AssetStatuses
-                            .FirstOrDefaultAsync(s => s.Name == statusName && s.IsActive);
-                        if (status == null)
-                        {
-                            // Get available statuses for debugging
-                            var availableStatuses = await _context.AssetStatuses
-                                .Where(s => s.IsActive)
-                                .Select(s => s.Name)
-                                .ToListAsync();
-                            
-                            return Json(new InlineEditResponse { 
-                                Success = false, 
-                                Message = $"Status '{statusName}' not found. Available statuses: {string.Join(", ", availableStatuses)}" 
-                            });
-                        }
-                        
-                        equipment.CurrentStatusId = status.Id;
-                        await LogEquipmentAction(equipment.Id, "Status Changed", $"Status set to {status.Name}");
-                        break;
-
-                    case "netname":
-                        if (equipment.TechnologyConfiguration == null)
-                        {
-                            equipment.TechnologyConfiguration = new TechnologyConfiguration
-                            {
-                                EquipmentId = equipment.Id,
-                                LastUpdated = DateTime.UtcNow,
-                                UpdatedBy = User.Identity?.Name ?? "System"
-                            };
-                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
-                        }
-                        equipment.TechnologyConfiguration.NetName = request.Value?.ToString();
-                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
-                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
-                        await LogEquipmentAction(equipment.Id, "Net Name Updated", $"Net name set to {request.Value}");
-                        break;
-
-                    case "phone_number":
-                        equipment.Phone_Number = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Phone Number Updated", $"Phone number set to {request.Value}");
-                        break;
-
-                    case "asset_tag":
-                        equipment.Asset_Tag = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Asset Tag Updated", $"Asset tag set to {request.Value}");
-                        break;
-
-                    case "service_tag":
-                        equipment.Service_Tag = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Service Tag Updated", $"Service tag set to {request.Value}");
-                        break;
-
-                    case "ip_address":
-                        equipment.IP_Address = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "IP Address Updated", $"IP address set to {request.Value}");
-                        break;
-
-                    case "os_version":
-                        equipment.OS_Version = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "OS Version Updated", $"OS version set to {request.Value}");
-                        break;
-
-                    case "purchaseprice":
-                        if (decimal.TryParse(request.Value?.ToString().Replace("$", "").Replace(",", ""), out decimal purchasePrice))
-                        {
-                            equipment.PurchasePrice = purchasePrice;
-                            await LogEquipmentAction(equipment.Id, "Purchase Price Updated", $"Purchase price set to {purchasePrice:C}");
-                        }
-                        else
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Invalid price format. Please enter a valid number." });
-                        }
-                        break;
-
-                    case "warrantyenddate":
-                        if (DateTime.TryParse(request.Value?.ToString(), out DateTime warrantyEndDate))
-                        {
-                            equipment.WarrantyEndDate = warrantyEndDate;
-                            await LogEquipmentAction(equipment.Id, "Warranty End Date Updated", $"Warranty end date set to {warrantyEndDate:MM/dd/yyyy}");
-                        }
-                        else
-                        {
-                            return Json(new InlineEditResponse { Success = false, Message = "Invalid date format. Please use MM/dd/yyyy" });
-                        }
-                        break;
-
-                    case "notes":
-                        equipment.Notes = request.Value?.ToString();
-                        await LogEquipmentAction(equipment.Id, "Notes Updated", $"Notes updated");
-                        break;
-
-                    default:
-                        return Json(new InlineEditResponse { Success = false, Message = $"Field '{request.Field}' is not editable" });
-                }
-
-                equipment.UpdatedAt = DateTime.UtcNow;
-                equipment.UpdatedBy = User.Identity?.Name ?? "System";
-
-                await _context.SaveChangesAsync();
-                await LogEquipmentChanges(originalEquipment, equipment);
-
-                return Json(new InlineEditResponse 
-                { 
-                    Success = true, 
-                    Message = "Field updated successfully",
-                    NewValue = request.Value
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new InlineEditResponse { Success = false, Message = $"Error updating field: {ex.Message}" });
-            }
-        }
-
-        // Bulk Actions
-        [HttpPost("BulkSetStatus")]
-        public async Task<IActionResult> BulkSetStatus([FromBody] BulkActionRequest request)
-        {
-            try
-            {
-                if (request.Ids == null || !request.Ids.Any())
-                {
-                    return Json(new { Success = false, Message = "No equipment selected" });
-                }
-
-                if (!int.TryParse(request.Value, out int statusId))
-                {
-                    return Json(new { Success = false, Message = "Invalid status value" });
-                }
-
-                var status = await _context.AssetStatuses.FindAsync(statusId);
-                if (status == null)
-                {
-                    return Json(new { Success = false, Message = "Status not found" });
-                }
-
-                var equipmentList = await _context.Equipment
-                    .Where(e => request.Ids.Contains(e.Id))
-                    .ToListAsync();
-
-                foreach (var equipment in equipmentList)
-                {
-                    equipment.CurrentStatusId = statusId;
-                    equipment.UpdatedAt = DateTime.UtcNow;
-                    equipment.UpdatedBy = User.Identity?.Name ?? "System";
-                    await LogEquipmentAction(equipment.Id, "Bulk Status Change", $"Status set to {status.Name}");
-                }
-
-                await _context.SaveChangesAsync();
-
-                return Json(new { Success = true, Message = $"Updated status for {equipmentList.Count} equipment items" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { Success = false, Message = $"Error updating status: {ex.Message}" });
-            }
-        }
-
-        [HttpPost("ExportSelected")]
+        // GET: Equipment/ExportSelected
         public async Task<IActionResult> ExportSelected([FromBody] BulkActionRequest request)
         {
             try
@@ -1358,6 +1540,132 @@ namespace AssetManagement.Controllers
             catch (Exception ex)
             {
                 return Json(new { Success = false, Message = $"Error exporting data: {ex.Message}" });
+            }
+        }
+
+        // Helper methods for select lists
+        private async Task<SelectList> GetAssetCategorySelectList()
+        {
+            var categories = await _context.AssetCategories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            return new SelectList(categories, "Id", "Name");
+        }
+
+        private async Task<SelectList> GetAssetStatusSelectList()
+        {
+            var statuses = await _context.AssetStatuses
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+            return new SelectList(statuses, "Id", "Name");
+        }
+
+        private async Task<SelectList> GetLocationSelectList()
+        {
+            var locations = await _context.Locations
+                .Where(l => l.IsActive)
+                .OrderBy(l => l.Name)
+                .ToListAsync();
+            return new SelectList(locations, "Id", "Name");
+        }
+
+        private async Task<SelectList> GetFloorPlanSelectList()
+        {
+            var floorPlans = await _context.FloorPlans
+                .Where(fp => fp.IsActive)
+                .OrderBy(fp => fp.FloorName)
+                .ToListAsync();
+            return new SelectList(floorPlans, "Id", "FloorName");
+        }
+
+        private async Task<SelectList> GetDeskSelectList()
+        {
+            var desks = await _context.Desks
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.DeskName)
+                .ToListAsync();
+            return new SelectList(desks, "Id", "DeskName");
+        }
+
+        private async Task<SelectList> GetPersonSelectList()
+        {
+            var persons = await _context.People
+                .Where(p => p.IsActive)
+                .OrderBy(p => p.FullName)
+                .ToListAsync();
+            return new SelectList(persons, "Id", "FullName");
+        }
+
+        private async Task<SelectList> GetEntraUserSelectList()
+        {
+            var entraUsers = await _context.EntraUsers
+                .Where(eu => eu.IsActive)
+                .OrderBy(eu => eu.DisplayName)
+                .ToListAsync();
+            return new SelectList(entraUsers, "Id", "DisplayName");
+        }
+
+        private bool EquipmentExists(int id)
+        {
+            return _context.Equipment.Any(e => e.Id == id);
+        }
+
+        private async Task LogEquipmentAction(int equipmentId, string action, string description)
+        {
+            try
+            {
+                var auditLog = new AssetAuditLog
+                {
+                    EquipmentId = equipmentId,
+                    Action = $"{action}: {description}",
+                    PerformedBy = User.Identity?.Name ?? "System",
+                    PerformedAt = DateTime.UtcNow
+                };
+
+                _context.AssetAuditLogs.Add(auditLog);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't throw to avoid breaking the main operation
+                Console.WriteLine($"Failed to log equipment action {action} for equipment {equipmentId}: {ex.Message}");
+            }
+        }
+
+        private async Task LogEquipmentChanges(Equipment originalEquipment, Equipment updatedEquipment)
+        {
+            try
+            {
+                var changes = new List<string>();
+
+                if (originalEquipment.OATH_Tag != updatedEquipment.OATH_Tag)
+                    changes.Add($"OATH Tag: {originalEquipment.OATH_Tag} → {updatedEquipment.OATH_Tag}");
+
+                if (originalEquipment.Serial_Number != updatedEquipment.Serial_Number)
+                    changes.Add($"Serial Number: {originalEquipment.Serial_Number} → {updatedEquipment.Serial_Number}");
+
+                if (originalEquipment.Model != updatedEquipment.Model)
+                    changes.Add($"Model: {originalEquipment.Model} → {updatedEquipment.Model}");
+
+                if (originalEquipment.Assigned_User_Name != updatedEquipment.Assigned_User_Name)
+                    changes.Add($"Assigned User: {originalEquipment.Assigned_User_Name} → {updatedEquipment.Assigned_User_Name}");
+
+                if (originalEquipment.CurrentStatusId != updatedEquipment.CurrentStatusId)
+                    changes.Add($"Status: {originalEquipment.CurrentStatusId} → {updatedEquipment.CurrentStatusId}");
+
+                if (originalEquipment.CurrentLocationId != updatedEquipment.CurrentLocationId)
+                    changes.Add($"Location: {originalEquipment.CurrentLocationId} → {updatedEquipment.CurrentLocationId}");
+
+                if (changes.Any())
+                {
+                    await LogEquipmentAction(updatedEquipment.Id, "Updated", $"Changes: {string.Join(", ", changes)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to log equipment changes: {ex.Message}");
             }
         }
     }
