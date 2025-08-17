@@ -21,10 +21,18 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Equipment" asp-action="Index">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-laptop"></i> Equipment
                             </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="SimplifiedEquipment" asp-action="Index">
+                                    <i class="bi bi-table"></i> Simplified Equipment
+                                </a></li>
+                                <li><a class="dropdown-item" asp-controller="Equipment" asp-action="Index">
+                                    <i class="bi bi-gear"></i> Advanced Equipment
+                                </a></li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="InteractiveMap" asp-action="Index">

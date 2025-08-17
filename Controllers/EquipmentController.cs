@@ -227,7 +227,7 @@ namespace AssetManagement.Controllers
                 var phoneNumbers = phoneNumberFilter.Split(',').Select(p => p.Trim()).ToList();
                 equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
                                                 !String.IsNullOrEmpty(e.TechnologyConfiguration.PhoneNumber) && 
-                                                phoneNumbers.Contains(e.TechnologyConfiguration.PhoneNumber));
+                                                phoneNumbers.Any(p => e.TechnologyConfiguration.PhoneNumber.Contains(p)));
             }
 
             // Apply Purchase Price filter (support multiple values)
@@ -1044,6 +1044,533 @@ namespace AssetManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Equipment/UpdateField
+        [HttpPost]
+        public async Task<IActionResult> UpdateField([FromBody] InlineEditRequest request)
+        {
+            try
+            {
+                Console.WriteLine($"UpdateField called with: EquipmentId={request?.EquipmentId}, FieldName={request?.FieldName}, Value={request?.Value}");
+                
+                if (request == null || string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    Console.WriteLine("Invalid request: null or empty EquipmentId");
+                    return Json(new InlineEditResponse { Success = false, Message = "Invalid request" });
+                }
+
+                // Try to find equipment by OATH Tag first, then by ID
+                Equipment? equipment = null;
+                if (int.TryParse(request.EquipmentId, out int equipmentId))
+                {
+                    Console.WriteLine($"Trying to find equipment by ID: {equipmentId}");
+                    equipment = await _context.Equipment
+                        .Include(e => e.TechnologyConfiguration)
+                        .FirstOrDefaultAsync(e => e.Id == equipmentId);
+                    Console.WriteLine($"Equipment found by ID: {equipment != null}");
+                }
+                
+                if (equipment == null)
+                {
+                    Console.WriteLine($"Trying to find equipment by OATH Tag: {request.EquipmentId}");
+                    equipment = await _context.Equipment
+                        .Include(e => e.TechnologyConfiguration)
+                        .FirstOrDefaultAsync(e => e.OATH_Tag == request.EquipmentId);
+                    Console.WriteLine($"Equipment found by OATH Tag: {equipment != null}");
+                }
+
+                if (equipment == null)
+                {
+                    Console.WriteLine("Equipment not found by either ID or OATH Tag");
+                    return Json(new InlineEditResponse { Success = false, Message = "Equipment not found" });
+                }
+
+                Console.WriteLine($"Found equipment: ID={equipment.Id}, OATH_Tag={equipment.OATH_Tag}, FieldName={request.FieldName}");
+
+                // Update the appropriate field based on the field name
+                switch (request.FieldName)
+                {
+                    case "OATH_Tag":
+                        equipment.OATH_Tag = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "OATH Tag Updated", $"OATH Tag set to {request.Value}");
+                        break;
+                    case "Serial_Number":
+                        equipment.Serial_Number = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Serial Number Updated", $"Serial number set to {request.Value}");
+                        break;
+                    case "Model":
+                        equipment.Model = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Model Updated", $"Model set to {request.Value}");
+                        break;
+                    case "Manufacturer":
+                        equipment.Manufacturer = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Manufacturer Updated", $"Manufacturer set to {request.Value}");
+                        break;
+                    case "Assigned_User_Name":
+                        equipment.Assigned_User_Name = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Assigned User Updated", $"Assigned user set to {request.Value}");
+                        break;
+                    case "Department":
+                        equipment.Department = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Department Updated", $"Department set to {request.Value}");
+                        break;
+                    case "Asset_Tag":
+                        equipment.Asset_Tag = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Asset Tag Updated", $"Asset tag set to {request.Value}");
+                        break;
+                    case "Service_Tag":
+                        equipment.Service_Tag = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Service Tag Updated", $"Service tag set to {request.Value}");
+                        break;
+                    case "IP_Address":
+                        equipment.IP_Address = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "IP Address Updated", $"IP address set to {request.Value}");
+                        break;
+                    case "OS_Version":
+                        equipment.OS_Version = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "OS Version Updated", $"OS version set to {request.Value}");
+                        break;
+                    case "PurchasePrice":
+                        if (decimal.TryParse(request.Value?.ToString(), out decimal purchasePrice))
+                        {
+                            equipment.PurchasePrice = purchasePrice;
+                            await LogEquipmentAction(equipment.Id, "Purchase Price Updated", $"Purchase price set to {purchasePrice:C}");
+                        }
+                        break;
+                    case "WarrantyEndDate":
+                        if (DateTime.TryParse(request.Value?.ToString(), out DateTime warrantyEnd))
+                        {
+                            equipment.WarrantyEndDate = warrantyEnd;
+                            await LogEquipmentAction(equipment.Id, "Warranty End Updated", $"Warranty end set to {warrantyEnd:MM/dd/yyyy}");
+                        }
+                        break;
+                    case "Notes":
+                        equipment.Notes = request.Value?.ToString();
+                        await LogEquipmentAction(equipment.Id, "Notes Updated", $"Notes updated");
+                        break;
+                    case "PurchaseDate":
+                        if (DateTime.TryParse(request.Value?.ToString(), out DateTime purchaseDate))
+                        {
+                            equipment.PurchaseDate = purchaseDate;
+                            await LogEquipmentAction(equipment.Id, "Purchase Date Updated", $"Purchase date set to {purchaseDate:MM/dd/yyyy}");
+                        }
+                        break;
+                    case "PhoneNumber":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.PhoneNumber = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Phone Number Updated", $"Phone number set to {request.Value}");
+                        break;
+                    case "NetName":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.NetName = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Net Name Updated", $"Net name set to {request.Value}");
+                        break;
+                    case "MACAddress":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.MACAddress = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "MAC Address Updated", $"MAC address set to {request.Value}");
+                        break;
+                    case "WallPort":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.WallPort = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Wall Port Updated", $"Wall port set to {request.Value}");
+                        break;
+                    case "SwitchName":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.SwitchName = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Switch Name Updated", $"Switch name set to {request.Value}");
+                        break;
+                    case "SwitchPort":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.SwitchPort = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Switch Port Updated", $"Switch port set to {request.Value}");
+                        break;
+                    case "Extension":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.Extension = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Extension Updated", $"Extension set to {request.Value}");
+                        break;
+                    case "IMEI":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.IMEI = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "IMEI Updated", $"IMEI set to {request.Value}");
+                        break;
+                    case "SIMCardNumber":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.SIMCardNumber = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "SIM Card Updated", $"SIM card set to {request.Value}");
+                        break;
+                    case "ConfigurationNotes":
+                        if (equipment.TechnologyConfiguration == null)
+                        {
+                            equipment.TechnologyConfiguration = new TechnologyConfiguration
+                            {
+                                EquipmentId = equipment.Id,
+                                LastUpdated = DateTime.UtcNow,
+                                UpdatedBy = User.Identity?.Name ?? "System"
+                            };
+                            _context.TechnologyConfigurations.Add(equipment.TechnologyConfiguration);
+                        }
+                        equipment.TechnologyConfiguration.ConfigurationNotes = request.Value?.ToString();
+                        equipment.TechnologyConfiguration.LastUpdated = DateTime.UtcNow;
+                        equipment.TechnologyConfiguration.UpdatedBy = User.Identity?.Name ?? "System";
+                        await LogEquipmentAction(equipment.Id, "Config Notes Updated", $"Configuration notes updated");
+                        break;
+                    case "CurrentLocationId":
+                        // Handle null/empty value to clear the relationship
+                        if (string.IsNullOrEmpty(request.Value?.ToString()) || request.Value?.ToString()?.ToLower() == "null")
+                        {
+                            equipment.CurrentLocationId = null;
+                            await LogEquipmentAction(equipment.Id, "Location Updated", "Location cleared");
+                        }
+                        // Try to parse as ID first
+                        else if (int.TryParse(request.Value?.ToString(), out int locationId))
+                        {
+                            // Validate that the location exists
+                            var locationExists = await _context.Locations.AnyAsync(l => l.Id == locationId);
+                            if (locationExists)
+                            {
+                                equipment.CurrentLocationId = locationId;
+                                await LogEquipmentAction(equipment.Id, "Location Updated", $"Location ID set to {locationId}");
+                            }
+                            else
+                            {
+                                return Json(new InlineEditResponse { Success = false, Message = $"Location with ID {locationId} does not exist" });
+                            }
+                        }
+                        else
+                        {
+                            // Try to find by name
+                            var locationName = request.Value?.ToString();
+                            if (!string.IsNullOrEmpty(locationName))
+                            {
+                                var location = await _context.Locations
+                                    .FirstOrDefaultAsync(l => l.Name == locationName);
+                                if (location != null)
+                                {
+                                    equipment.CurrentLocationId = location.Id;
+                                    await LogEquipmentAction(equipment.Id, "Location Updated", $"Location set to {location.Name}");
+                                }
+                                else
+                                {
+                                    // Get available locations for better error message
+                                    var availableLocations = await _context.Locations
+                                        .Where(l => l.IsActive)
+                                        .Select(l => l.Name)
+                                        .OrderBy(l => l)
+                                        .ToListAsync();
+                                    
+                                    var availableOptions = string.Join(", ", availableLocations.Take(5));
+                                    var message = $"Location '{locationName}' does not exist. Available options: {availableOptions}";
+                                    if (availableLocations.Count > 5)
+                                    {
+                                        message += $" and {availableLocations.Count - 5} more...";
+                                    }
+                                    
+                                    return Json(new InlineEditResponse { Success = false, Message = message });
+                                }
+                            }
+                        }
+                        break;
+                    case "CurrentFloorPlanId":
+                        // Handle null/empty value to clear the relationship
+                        if (string.IsNullOrEmpty(request.Value?.ToString()) || request.Value?.ToString()?.ToLower() == "null")
+                        {
+                            equipment.CurrentFloorPlanId = null;
+                            await LogEquipmentAction(equipment.Id, "Floor Plan Updated", "Floor Plan cleared");
+                        }
+                        // Try to parse as ID first
+                        else if (int.TryParse(request.Value?.ToString(), out int floorPlanId))
+                        {
+                            // Validate that the floor plan exists
+                            var floorPlanExists = await _context.FloorPlans.AnyAsync(f => f.Id == floorPlanId);
+                            if (floorPlanExists)
+                            {
+                                equipment.CurrentFloorPlanId = floorPlanId;
+                                await LogEquipmentAction(equipment.Id, "Floor Plan Updated", $"Floor Plan ID set to {floorPlanId}");
+                            }
+                            else
+                            {
+                                return Json(new InlineEditResponse { Success = false, Message = $"Floor Plan with ID {floorPlanId} does not exist" });
+                            }
+                        }
+                        else
+                        {
+                            // Try to find by name
+                            var floorPlanName = request.Value?.ToString();
+                            if (!string.IsNullOrEmpty(floorPlanName))
+                            {
+                                var floorPlan = await _context.FloorPlans
+                                    .FirstOrDefaultAsync(f => f.FloorName == floorPlanName);
+                                if (floorPlan != null)
+                                {
+                                    equipment.CurrentFloorPlanId = floorPlan.Id;
+                                    await LogEquipmentAction(equipment.Id, "Floor Plan Updated", $"Floor Plan set to {floorPlan.FloorName}");
+                                }
+                                else
+                                {
+                                    // Get available floor plans for better error message
+                                    var availableFloorPlans = await _context.FloorPlans
+                                        .Where(f => f.IsActive)
+                                        .Select(f => f.FloorName)
+                                        .OrderBy(f => f)
+                                        .ToListAsync();
+                                    
+                                    var availableOptions = string.Join(", ", availableFloorPlans.Take(5));
+                                    var message = $"Floor Plan '{floorPlanName}' does not exist. Available options: {availableOptions}";
+                                    if (availableFloorPlans.Count > 5)
+                                    {
+                                        message += $" and {availableFloorPlans.Count - 5} more...";
+                                    }
+                                    
+                                    return Json(new InlineEditResponse { Success = false, Message = message });
+                                }
+                            }
+                        }
+                        break;
+                    case "CurrentDeskId":
+                        // Handle null/empty value to clear the relationship
+                        if (string.IsNullOrEmpty(request.Value?.ToString()) || request.Value?.ToString()?.ToLower() == "null")
+                        {
+                            equipment.CurrentDeskId = null;
+                            await LogEquipmentAction(equipment.Id, "Desk Updated", "Desk cleared");
+                        }
+                        // Try to parse as ID first
+                        else if (int.TryParse(request.Value?.ToString(), out int deskId))
+                        {
+                            // Validate that the desk exists
+                            var deskExists = await _context.Desks.AnyAsync(d => d.Id == deskId);
+                            if (deskExists)
+                            {
+                                equipment.CurrentDeskId = deskId;
+                                await LogEquipmentAction(equipment.Id, "Desk Updated", $"Desk ID set to {deskId}");
+                            }
+                            else
+                            {
+                                return Json(new InlineEditResponse { Success = false, Message = $"Desk with ID {deskId} does not exist" });
+                            }
+                        }
+                        else
+                        {
+                            // Try to find by name
+                            var deskName = request.Value?.ToString();
+                            if (!string.IsNullOrEmpty(deskName))
+                            {
+                                var desk = await _context.Desks
+                                    .FirstOrDefaultAsync(d => d.DeskName == deskName);
+                                if (desk != null)
+                                {
+                                    equipment.CurrentDeskId = desk.Id;
+                                    await LogEquipmentAction(equipment.Id, "Desk Updated", $"Desk set to {desk.DeskName}");
+                                }
+                                else
+                                {
+                                    return Json(new InlineEditResponse { Success = false, Message = $"Desk '{deskName}' does not exist" });
+                                }
+                            }
+                        }
+                        break;
+                    case "CurrentStatusId":
+                        // Handle null/empty value to clear the relationship
+                        if (string.IsNullOrEmpty(request.Value?.ToString()) || request.Value?.ToString()?.ToLower() == "null")
+                        {
+                            equipment.CurrentStatusId = null;
+                            await LogEquipmentAction(equipment.Id, "Status Updated", "Status cleared");
+                        }
+                        // Try to parse as ID first
+                        else if (int.TryParse(request.Value?.ToString(), out int statusId))
+                        {
+                            // Validate that the status exists
+                            var statusExists = await _context.AssetStatuses.AnyAsync(s => s.Id == statusId);
+                            if (statusExists)
+                            {
+                                equipment.CurrentStatusId = statusId;
+                                await LogEquipmentAction(equipment.Id, "Status Updated", $"Status ID set to {statusId}");
+                            }
+                            else
+                            {
+                                return Json(new InlineEditResponse { Success = false, Message = $"Status with ID {statusId} does not exist" });
+                            }
+                        }
+                        else
+                        {
+                            // Try to find by name
+                            var statusName = request.Value?.ToString();
+                            if (!string.IsNullOrEmpty(statusName))
+                            {
+                                var status = await _context.AssetStatuses
+                                    .FirstOrDefaultAsync(s => s.Name == statusName);
+                                if (status != null)
+                                {
+                                    equipment.CurrentStatusId = status.Id;
+                                    await LogEquipmentAction(equipment.Id, "Status Updated", $"Status set to {status.Name}");
+                                }
+                                else
+                                {
+                                    return Json(new InlineEditResponse { Success = false, Message = $"Status '{statusName}' does not exist" });
+                                }
+                            }
+                        }
+                        break;
+                    case "AssetCategoryId":
+                        // Handle null/empty value to clear the relationship
+                        if (string.IsNullOrEmpty(request.Value?.ToString()) || request.Value?.ToString()?.ToLower() == "null")
+                        {
+                            equipment.AssetCategoryId = null;
+                            await LogEquipmentAction(equipment.Id, "Category Updated", "Category cleared");
+                        }
+                        // Try to parse as ID first
+                        else if (int.TryParse(request.Value?.ToString(), out int categoryId))
+                        {
+                            // Validate that the category exists
+                            var categoryExists = await _context.AssetCategories.AnyAsync(c => c.Id == categoryId);
+                            if (categoryExists)
+                            {
+                                equipment.AssetCategoryId = categoryId;
+                                await LogEquipmentAction(equipment.Id, "Category Updated", $"Category ID set to {categoryId}");
+                            }
+                            else
+                            {
+                                return Json(new InlineEditResponse { Success = false, Message = $"Category with ID {categoryId} does not exist" });
+                            }
+                        }
+                        else
+                        {
+                            // Try to find by name
+                            var categoryName = request.Value?.ToString();
+                            if (!string.IsNullOrEmpty(categoryName))
+                            {
+                                var category = await _context.AssetCategories
+                                    .FirstOrDefaultAsync(c => c.Name == categoryName);
+                                if (category != null)
+                                {
+                                    equipment.AssetCategoryId = category.Id;
+                                    await LogEquipmentAction(equipment.Id, "Category Updated", $"Category set to {category.Name}");
+                                }
+                                else
+                                {
+                                    return Json(new InlineEditResponse { Success = false, Message = $"Category '{categoryName}' does not exist" });
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        Console.WriteLine($"Unknown field: {request.FieldName}");
+                        return Json(new InlineEditResponse { Success = false, Message = $"Unknown field: {request.FieldName}" });
+                }
+
+                // Update the equipment's UpdatedAt timestamp
+                equipment.UpdatedAt = DateTime.UtcNow;
+                equipment.UpdatedBy = User.Identity?.Name ?? "System";
+
+                await _context.SaveChangesAsync();
+
+                return Json(new InlineEditResponse { Success = true, Message = "Field updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new InlineEditResponse { Success = false, Message = $"Error updating field: {ex.Message}" });
+            }
+        }
+
         // GET: Equipment/Export
         public async Task<IActionResult> Export(string searchString, string sortOrder, 
             string? categoryFilter, string? statusFilter, string? departmentFilter, 
@@ -1188,7 +1715,7 @@ namespace AssetManagement.Controllers
                 var phoneNumbers = phoneNumberFilter.Split(',').Select(p => p.Trim()).ToList();
                 equipment = equipment.Where(e => e.TechnologyConfiguration != null && 
                                                 !String.IsNullOrEmpty(e.TechnologyConfiguration.PhoneNumber) && 
-                                                phoneNumbers.Contains(e.TechnologyConfiguration.PhoneNumber));
+                                                phoneNumbers.Any(p => e.TechnologyConfiguration.PhoneNumber.Contains(p)));
             }
 
             if (!String.IsNullOrEmpty(purchasePriceFilter))
@@ -1702,5 +2229,19 @@ namespace AssetManagement.Controllers
     {
         public List<int>? Ids { get; set; }
         public string? Value { get; set; }
+    }
+
+    public class InlineEditRequest
+    {
+        public string? EquipmentId { get; set; }
+        public string? FieldName { get; set; }
+        public object? Value { get; set; }
+    }
+
+    public class InlineEditResponse
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public object? Data { get; set; }
     }
 }

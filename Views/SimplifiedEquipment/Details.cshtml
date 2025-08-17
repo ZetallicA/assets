@@ -1,0 +1,333 @@
+@model AssetManagement.Models.SimplifiedEquipment
+
+@{
+    ViewData["Title"] = "Equipment Details";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h3 mb-0">Equipment Details</h1>
+                    <p class="text-muted">View equipment information</p>
+                </div>
+                <div>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Primary Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Primary Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                                                 <dt class="col-sm-4">Asset Tag</dt>
+                                 <dd class="col-sm-8"><strong>@Model.Asset_Tag</strong></dd>
+                                 
+                                 <dt class="col-sm-4">Serial Number</dt>
+                                 <dd class="col-sm-8">@(Model.Serial_Number ?? "N/A")</dd>
+                                 
+
+                                
+                                <dt class="col-sm-4">Service Tag</dt>
+                                <dd class="col-sm-8">@(Model.Service_Tag ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Manufacturer</dt>
+                                <dd class="col-sm-8">@(Model.Manufacturer ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Model</dt>
+                                <dd class="col-sm-8">@(Model.Model ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Category</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Category))
+                                    {
+                                        <span class="badge bg-primary">@Model.Category</span>
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </dd>
+                                
+                                
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-person"></i> Assignment Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Assigned User</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Assigned_User_Name))
+                                    {
+                                        <div>@Model.Assigned_User_Name</div>
+                                        @if (!string.IsNullOrEmpty(Model.Assigned_User_Email))
+                                        {
+                                            <small class="text-muted">@Model.Assigned_User_Email</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Unassigned</span>
+                                    }
+                                </dd>
+                                
+                                <dt class="col-sm-4">Department</dt>
+                                <dd class="col-sm-8">@(Model.Department ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Unit</dt>
+                                <dd class="col-sm-8">@(Model.Unit ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Status</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Status))
+                                    {
+                                        <span class="badge bg-secondary">@Model.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Location Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Location Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Location</dt>
+                                <dd class="col-sm-8">@(Model.Location ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Floor</dt>
+                                <dd class="col-sm-8">@(Model.Floor ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Desk</dt>
+                                <dd class="col-sm-8">@(Model.Desk ?? "N/A")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-wifi"></i> Network Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Net Name</dt>
+                                <dd class="col-sm-8">@(Model.Net_Name ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">IP Address</dt>
+                                <dd class="col-sm-8">@(Model.IP_Address ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">MAC Address</dt>
+                                <dd class="col-sm-8">@(Model.MAC_Address ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Wall Port</dt>
+                                <dd class="col-sm-8">@(Model.Wall_Port ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Switch Name</dt>
+                                <dd class="col-sm-8">@(Model.Switch_Name ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Switch Port</dt>
+                                <dd class="col-sm-8">@(Model.Switch_Port ?? "N/A")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Phone Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-telephone"></i> Phone Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Phone Number</dt>
+                                <dd class="col-sm-8">@(Model.Phone_Number ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Extension</dt>
+                                <dd class="col-sm-8">@(Model.Extension ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">IMEI</dt>
+                                <dd class="col-sm-8">@(Model.IMEI ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">SIM Card Number</dt>
+                                <dd class="col-sm-8">@(Model.SIM_Card_Number ?? "N/A")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Software Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-code-slash"></i> Software Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">OS Version</dt>
+                                <dd class="col-sm-8">@(Model.OS_Version ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">License 1</dt>
+                                <dd class="col-sm-8">@(Model.License1 ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">License 2</dt>
+                                <dd class="col-sm-8">@(Model.License2 ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">License 3</dt>
+                                <dd class="col-sm-8">@(Model.License3 ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">License 4</dt>
+                                <dd class="col-sm-8">@(Model.License4 ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">License 5</dt>
+                                <dd class="col-sm-8">@(Model.License5 ?? "N/A")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Financial Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Financial Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Purchase Price</dt>
+                                <dd class="col-sm-8">@(Model.Purchase_Price?.ToString("C") ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Purchase Order</dt>
+                                <dd class="col-sm-8">@(Model.Purchase_Order_Number ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Vendor</dt>
+                                <dd class="col-sm-8">@(Model.Vendor ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Purchase Date</dt>
+                                <dd class="col-sm-8">@(Model.Purchase_Date?.ToString("MM/dd/yyyy") ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Warranty Start</dt>
+                                <dd class="col-sm-8">@(Model.Warranty_Start_Date?.ToString("MM/dd/yyyy") ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Warranty End</dt>
+                                <dd class="col-sm-8">@(Model.Warranty_End_Date?.ToString("MM/dd/yyyy") ?? "N/A")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Information -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Audit Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Created At</dt>
+                                <dd class="col-sm-8">@Model.CreatedAt.ToString("MM/dd/yyyy HH:mm")</dd>
+                                
+                                <dt class="col-sm-4">Created By</dt>
+                                <dd class="col-sm-8">@Model.CreatedBy</dd>
+                                
+                                <dt class="col-sm-4">Updated At</dt>
+                                <dd class="col-sm-8">@(Model.UpdatedAt?.ToString("MM/dd/yyyy HH:mm") ?? "Never")</dd>
+                                
+                                <dt class="col-sm-4">Updated By</dt>
+                                <dd class="col-sm-8">@(Model.UpdatedBy ?? "N/A")</dd>
+                                
+                                <dt class="col-sm-4">Is Active</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Inactive</span>
+                                    }
+                                </dd>
+                                
+                                <dt class="col-sm-4">Is Checked Out</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.IsCheckedOut)
+                                    {
+                                        <span class="badge bg-warning">Checked Out</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Available</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+                                @if (!string.IsNullOrEmpty(Model.Notes) || !string.IsNullOrEmpty(Model.Vendor_Info))
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-sticky"></i> Notes</h5>
+                            </div>
+                            <div class="card-body">
+                                @if (!string.IsNullOrEmpty(Model.Notes))
+                                {
+                                    <h6>General Notes</h6>
+                                    <p>@Model.Notes</p>
+                                }
+                                
+                                                        @if (!string.IsNullOrEmpty(Model.Vendor_Info))
+                        {
+                            <h6>Vendor Info</h6>
+                            <p>@Model.Vendor_Info</p>
+                        }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

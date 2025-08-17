@@ -20,6 +20,7 @@ namespace AssetManagement.Data
         public DbSet<EntraUser> EntraUsers { get; set; }
         public DbSet<AssetAuditLog> AssetAuditLogs { get; set; }
         public DbSet<TechnologyConfiguration> TechnologyConfigurations { get; set; }
+        public DbSet<SimplifiedEquipment> SimplifiedEquipment { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -200,6 +201,51 @@ namespace AssetManagement.Data
                     .WithMany(e => e.AuditLogs)
                     .HasForeignKey(aal => aal.EquipmentId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // SimplifiedEquipment configuration
+            modelBuilder.Entity<SimplifiedEquipment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Serial_Number).HasMaxLength(100);
+                entity.Property(e => e.Asset_Tag).HasMaxLength(100);
+                entity.Property(e => e.Service_Tag).HasMaxLength(100);
+                entity.Property(e => e.Manufacturer).HasMaxLength(100);
+                entity.Property(e => e.Model).HasMaxLength(100);
+                entity.Property(e => e.Category).HasMaxLength(100);
+                entity.Property(e => e.Assigned_User_Name).HasMaxLength(100);
+                entity.Property(e => e.Assigned_User_Email).HasMaxLength(100);
+                entity.Property(e => e.Department).HasMaxLength(100);
+                entity.Property(e => e.Unit).HasMaxLength(100);
+                entity.Property(e => e.Location).HasMaxLength(100);
+                entity.Property(e => e.Floor).HasMaxLength(100);
+                entity.Property(e => e.Desk).HasMaxLength(100);
+                entity.Property(e => e.Status).HasMaxLength(50);
+                entity.Property(e => e.Net_Name).HasMaxLength(100);
+                entity.Property(e => e.IP_Address).HasMaxLength(15);
+                entity.Property(e => e.MAC_Address).HasMaxLength(17);
+                entity.Property(e => e.Wall_Port).HasMaxLength(100);
+                entity.Property(e => e.Switch_Name).HasMaxLength(100);
+                entity.Property(e => e.Switch_Port).HasMaxLength(50);
+                entity.Property(e => e.Phone_Number).HasMaxLength(20);
+                entity.Property(e => e.Extension).HasMaxLength(20);
+                entity.Property(e => e.IMEI).HasMaxLength(50);
+                entity.Property(e => e.SIM_Card_Number).HasMaxLength(50);
+                entity.Property(e => e.OS_Version).HasMaxLength(100);
+                entity.Property(e => e.License1).HasMaxLength(100);
+                entity.Property(e => e.License2).HasMaxLength(100);
+                entity.Property(e => e.License3).HasMaxLength(100);
+                entity.Property(e => e.License4).HasMaxLength(100);
+                entity.Property(e => e.License5).HasMaxLength(100);
+                entity.Property(e => e.Purchase_Order_Number).HasMaxLength(100);
+                entity.Property(e => e.Vendor).HasMaxLength(100);
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                entity.Property(e => e.Vendor_Info).HasMaxLength(500);
+                entity.Property(e => e.CreatedBy).HasMaxLength(100);
+                entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+                entity.Property(e => e.CheckedOutBy).HasMaxLength(100);
+                entity.Property(e => e.QRCode).HasMaxLength(500);
+                entity.Property(e => e.Barcode).HasMaxLength(100);
             });
         }
     }

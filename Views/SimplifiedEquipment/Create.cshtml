@@ -1,0 +1,416 @@
+@model AssetManagement.Models.SimplifiedEquipment
+
+@{
+    ViewData["Title"] = "Create Simplified Equipment";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h3 mb-0">Create New Equipment</h1>
+                    <p class="text-muted">Add new equipment to the simplified system</p>
+                </div>
+                <div>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        
+                        <div class="row">
+                            <!-- Primary Identifiers -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Primary Identifiers</h5>
+                            </div>
+                                                         <div class="col-md-3">
+                                 <div class="form-group mb-3">
+                                     <label asp-for="Asset_Tag" class="form-label">Asset Tag *</label>
+                                     <input asp-for="Asset_Tag" class="form-control" required />
+                                     <span asp-validation-for="Asset_Tag" class="text-danger"></span>
+                                 </div>
+                             </div>
+                             <div class="col-md-3">
+                                 <div class="form-group mb-3">
+                                     <label asp-for="Serial_Number" class="form-label">Serial Number *</label>
+                                     <input asp-for="Serial_Number" class="form-control" required />
+                                     <span asp-validation-for="Serial_Number" class="text-danger"></span>
+                                 </div>
+                             </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Service_Tag" class="form-label">Service Tag</label>
+                                    <input asp-for="Service_Tag" class="form-control" />
+                                    <span asp-validation-for="Service_Tag" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Basic Equipment Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Basic Equipment Info</h5>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Manufacturer" class="form-label">Manufacturer</label>
+                                    <input asp-for="Manufacturer" class="form-control" />
+                                    <span asp-validation-for="Manufacturer" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Model" class="form-label">Model</label>
+                                    <input asp-for="Model" class="form-control" />
+                                    <span asp-validation-for="Model" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Category" class="form-label">Category</label>
+                                    <select asp-for="Category" class="form-select">
+                                        <option value="">Select Category</option>
+                                        <option value="Desktop">Desktop</option>
+                                        <option value="Laptop">Laptop</option>
+                                        <option value="Tablet">Tablet</option>
+                                        <option value="Phone">Phone</option>
+                                        <option value="Monitor">Monitor</option>
+                                        <option value="Printer">Printer</option>
+                                        <option value="Scanner">Scanner</option>
+                                        <option value="Server">Server</option>
+                                        <option value="Network Device">Network Device</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+                            </div>
+                            
+                        </div>
+
+                        <div class="row">
+                            <!-- Assignment Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Assignment Info</h5>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Assigned_User_Name" class="form-label">Assigned User Name</label>
+                                    <input asp-for="Assigned_User_Name" class="form-control" />
+                                    <span asp-validation-for="Assigned_User_Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Assigned_User_Email" class="form-label">Assigned User Email</label>
+                                    <input asp-for="Assigned_User_Email" type="email" class="form-control" />
+                                    <span asp-validation-for="Assigned_User_Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Department" class="form-label">Department</label>
+                                    <input asp-for="Department" class="form-control" />
+                                    <span asp-validation-for="Department" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Unit" class="form-label">Unit</label>
+                                    <input asp-for="Unit" class="form-control" />
+                                    <span asp-validation-for="Unit" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Location Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Location Info</h5>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Location" class="form-label">Location</label>
+                                    <input asp-for="Location" class="form-control" />
+                                    <span asp-validation-for="Location" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Floor" class="form-label">Floor</label>
+                                    <input asp-for="Floor" class="form-control" />
+                                    <span asp-validation-for="Floor" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Desk" class="form-label">Desk</label>
+                                    <input asp-for="Desk" class="form-control" />
+                                    <span asp-validation-for="Desk" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Status and Network Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Status & Network Info</h5>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Status" class="form-label">Status</label>
+                                    <select asp-for="Status" class="form-select">
+                                        <option value="">Select Status</option>
+                                        <option value="Available">Available</option>
+                                        <option value="In Use">In Use</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Retired">Retired</option>
+                                        <option value="Lost">Lost</option>
+                                        <option value="Stolen">Stolen</option>
+                                    </select>
+                                    <span asp-validation-for="Status" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Net_Name" class="form-label">Net Name</label>
+                                    <input asp-for="Net_Name" class="form-control" />
+                                    <span asp-validation-for="Net_Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="IP_Address" class="form-label">IP Address</label>
+                                    <input asp-for="IP_Address" class="form-control" />
+                                    <span asp-validation-for="IP_Address" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="MAC_Address" class="form-label">MAC Address</label>
+                                    <input asp-for="MAC_Address" class="form-control" />
+                                    <span asp-validation-for="MAC_Address" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Network Details -->
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Wall_Port" class="form-label">Wall Port</label>
+                                    <input asp-for="Wall_Port" class="form-control" />
+                                    <span asp-validation-for="Wall_Port" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Switch_Name" class="form-label">Switch Name</label>
+                                    <input asp-for="Switch_Name" class="form-control" />
+                                    <span asp-validation-for="Switch_Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Switch_Port" class="form-label">Switch Port</label>
+                                    <input asp-for="Switch_Port" class="form-control" />
+                                    <span asp-validation-for="Switch_Port" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Phone Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Phone Info</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Phone_Number" class="form-label">Phone Number</label>
+                                    <input asp-for="Phone_Number" class="form-control" />
+                                    <span asp-validation-for="Phone_Number" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Extension" class="form-label">Extension</label>
+                                    <input asp-for="Extension" class="form-control" />
+                                    <span asp-validation-for="Extension" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Mobile Device Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Mobile Device Info</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="IMEI" class="form-label">IMEI</label>
+                                    <input asp-for="IMEI" class="form-control" />
+                                    <span asp-validation-for="IMEI" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="SIM_Card_Number" class="form-label">SIM Card Number</label>
+                                    <input asp-for="SIM_Card_Number" class="form-control" />
+                                    <span asp-validation-for="SIM_Card_Number" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- OS and Software -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">OS and Software</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="OS_Version" class="form-label">OS Version</label>
+                                    <input asp-for="OS_Version" class="form-control" />
+                                    <span asp-validation-for="OS_Version" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="License1" class="form-label">License 1</label>
+                                    <input asp-for="License1" class="form-control" />
+                                    <span asp-validation-for="License1" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="License2" class="form-label">License 2</label>
+                                    <input asp-for="License2" class="form-control" />
+                                    <span asp-validation-for="License2" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="License3" class="form-label">License 3</label>
+                                    <input asp-for="License3" class="form-control" />
+                                    <span asp-validation-for="License3" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="License4" class="form-label">License 4</label>
+                                    <input asp-for="License4" class="form-control" />
+                                    <span asp-validation-for="License4" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="License5" class="form-label">License 5</label>
+                                    <input asp-for="License5" class="form-control" />
+                                    <span asp-validation-for="License5" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Financial Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Financial Info</h5>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Purchase_Price" class="form-label">Purchase Price</label>
+                                    <input asp-for="Purchase_Price" type="number" step="0.01" class="form-control" />
+                                    <span asp-validation-for="Purchase_Price" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Purchase_Order_Number" class="form-label">Purchase Order Number</label>
+                                    <input asp-for="Purchase_Order_Number" class="form-control" />
+                                    <span asp-validation-for="Purchase_Order_Number" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Vendor" class="form-label">Vendor</label>
+                                    <input asp-for="Vendor" class="form-control" />
+                                    <span asp-validation-for="Vendor" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Purchase_Date" class="form-label">Purchase Date</label>
+                                    <input asp-for="Purchase_Date" type="date" class="form-control" />
+                                    <span asp-validation-for="Purchase_Date" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Warranty_Start_Date" class="form-label">Warranty Start Date</label>
+                                    <input asp-for="Warranty_Start_Date" type="date" class="form-control" />
+                                    <span asp-validation-for="Warranty_Start_Date" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Warranty_End_Date" class="form-label">Warranty End Date</label>
+                                    <input asp-for="Warranty_End_Date" type="date" class="form-control" />
+                                    <span asp-validation-for="Warranty_End_Date" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Additional Info -->
+                            <div class="col-md-12">
+                                <h5 class="text-primary mb-3">Additional Info</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Notes" class="form-label">Notes</label>
+                                    <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Notes" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                                            <label asp-for="Vendor_Info" class="form-label">Vendor Info</label>
+                        <textarea asp-for="Vendor_Info" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Vendor_Info" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i> Create Equipment
+                                    </button>
+                                    <a asp-action="Index" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

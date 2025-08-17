@@ -1,0 +1,133 @@
+@{
+    ViewData["Title"] = "Import Equipment";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h3 mb-0">Import Equipment</h1>
+                    <p class="text-muted">Import equipment data from Excel file</p>
+                </div>
+                <div>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+                </div>
+            }
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle"></i> @TempData["Success"]
+                </div>
+            }
+
+            @if (TempData["ImportErrors"] != null)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Import Errors</h5>
+                    <p>@TempData["ImportErrors"]</p>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-upload"></i> Upload Excel File</h5>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="Import" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="file" class="form-label">Select Excel File (.xlsx or .xls)</label>
+                                    <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required />
+                                    <div class="form-text">The file should contain equipment data with headers in the first row.</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-upload"></i> Import Equipment
+                                    </button>
+                                    <a asp-action="Export" class="btn btn-outline-secondary">
+                                        <i class="bi bi-download"></i> Download Template
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Import Instructions</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Required Format:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Column 1:</strong> OATH Tag (Required)</li>
+                                <li><strong>Column 2:</strong> Serial Number</li>
+                                <li><strong>Column 3:</strong> Asset Tag</li>
+                                <li><strong>Column 4:</strong> Service Tag</li>
+                                <li><strong>Column 5:</strong> Manufacturer</li>
+                                <li><strong>Column 6:</strong> Model</li>
+                                <li><strong>Column 7:</strong> Category</li>
+                                <li><strong>Column 8:</strong> Computer Name</li>
+                                <li><strong>Column 9:</strong> Assigned User Name</li>
+                                <li><strong>Column 10:</strong> Assigned User Email</li>
+                                <li><strong>Column 11:</strong> Department</li>
+                                <li><strong>Column 12:</strong> Unit</li>
+                                <li><strong>Column 13:</strong> Location</li>
+                                <li><strong>Column 14:</strong> Floor</li>
+                                <li><strong>Column 15:</strong> Desk</li>
+                                <li><strong>Column 16:</strong> Status</li>
+                                <li><strong>Column 17:</strong> Net Name</li>
+                                <li><strong>Column 18:</strong> IP Address</li>
+                                <li><strong>Column 19:</strong> MAC Address</li>
+                                <li><strong>Column 20:</strong> Wall Port</li>
+                                <li><strong>Column 21:</strong> Switch Name</li>
+                                <li><strong>Column 22:</strong> Switch Port</li>
+                                <li><strong>Column 23:</strong> Phone Number</li>
+                                <li><strong>Column 24:</strong> Extension</li>
+                                <li><strong>Column 25:</strong> IMEI</li>
+                                <li><strong>Column 26:</strong> SIM Card Number</li>
+                                <li><strong>Column 27:</strong> OS Version</li>
+                                <li><strong>Column 28:</strong> License1</li>
+                                <li><strong>Column 29:</strong> License2</li>
+                                <li><strong>Column 30:</strong> License3</li>
+                                <li><strong>Column 31:</strong> License4</li>
+                                <li><strong>Column 32:</strong> License5</li>
+                                <li><strong>Column 33:</strong> Purchase Price</li>
+                                <li><strong>Column 34:</strong> Purchase Order Number</li>
+                                <li><strong>Column 35:</strong> Vendor</li>
+                                <li><strong>Column 36:</strong> Purchase Date (MM/dd/yyyy)</li>
+                                <li><strong>Column 37:</strong> Warranty Start Date (MM/dd/yyyy)</li>
+                                <li><strong>Column 38:</strong> Warranty End Date (MM/dd/yyyy)</li>
+                                <li><strong>Column 39:</strong> Notes</li>
+                                <li><strong>Column 40:</strong> Configuration Notes</li>
+                            </ul>
+
+                            <div class="alert alert-info mt-3">
+                                <h6><i class="bi bi-lightbulb"></i> Tips:</h6>
+                                <ul class="mb-0">
+                                    <li>Use the Export feature to download a template with the correct format</li>
+                                    <li>OATH Tag is the unique identifier - existing records will be updated</li>
+                                    <li>Dates should be in MM/dd/yyyy format</li>
+                                    <li>Empty cells will be ignored</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
